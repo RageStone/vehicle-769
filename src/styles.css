@@ -97,6 +97,16 @@
   --sidebar-ring: oklch(0.704 0.04 256.788);
 }
 
+:root {
+  --status-ok: oklch(0.65 0.18 145);
+  --status-bad: oklch(0.6 0.22 25);
+  --status-none: oklch(0.7 0.02 260);
+  --brand: oklch(0.55 0.18 250);
+}
+
+html { direction: rtl; }
+body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans Hebrew", sans-serif; }
+
 .dark {
   --background: oklch(0.129 0.042 264.695);
   --foreground: oklch(0.984 0.003 247.858);
