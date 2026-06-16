@@ -9,7 +9,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { useBulkDeleteVehicles, useBulkMarkChecked, useVehicles } from "@/lib/data";
-import { daysSince, formatDate, todayISO } from "@/lib/format";
+import { daysSince, effectiveStatus, formatDate, todayISO } from "@/lib/format";
 import type { Vehicle, VehicleWithLast } from "@/lib/types";
 import { StatusBadge } from "@/components/status-badge";
 import { InspectionDialog } from "@/components/inspection-dialog";
@@ -289,7 +289,7 @@ function Dashboard() {
                       </td>
                       <td className="p-2 text-muted-foreground">{v.notes || "—"}</td>
                       <td className="p-2">{v.last_inspection ? formatDate(v.last_inspection.inspection_date) : "—"}</td>
-                      <td className="p-2"><StatusBadge status={v.last_inspection?.status ?? null} /></td>
+                      <td className="p-2"><StatusBadge status={effectiveStatus(v.last_inspection)} /></td>
                       <td className="p-2">
                         <div className="flex justify-end gap-1">
                           <Button size="sm" onClick={() => setInspectionFor(v)}>
@@ -367,7 +367,7 @@ function VehicleCard({
               <div className="text-xs text-muted-foreground">{v.category}</div>
             </button>
           </div>
-          <StatusBadge status={v.last_inspection?.status ?? null} />
+          <StatusBadge status={effectiveStatus(v.last_inspection)} />
         </div>
         {v.notes && <div className="text-sm text-muted-foreground">{v.notes}</div>}
         <div className="text-xs text-muted-foreground">
