@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useInspections, useDeleteVehicle } from "@/lib/data";
+import { useInspections, useDeleteVehicle, useDeleteInspection } from "@/lib/data";
 import type { Vehicle } from "@/lib/types";
 import { formatDate } from "@/lib/format";
 import { StatusBadge } from "./status-badge";
@@ -22,6 +22,7 @@ export function VehicleDetailsDialog({
 }) {
   const { data: inspections } = useInspections(vehicle?.id ?? null);
   const del = useDeleteVehicle();
+  const delInspection = useDeleteInspection();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -83,11 +84,43 @@ export function VehicleDetailsDialog({
                 <div className="space-y-2">
                   {inspections.map((ins) => (
                     <div key={ins.id} className="flex items-start justify-between gap-2 rounded-md border p-2 text-sm">
-                      <div>
+                      <div className="flex-1">
                         <div className="font-medium">{formatDate(ins.inspection_date)}</div>
                         {ins.notes && <div className="text-muted-foreground">{ins.notes}</div>}
                       </div>
-                      <StatusBadge status={ins.status} />
+                      <div className="flex items-center gap-2">
+                        <StatusBadge status={ins.status} />
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="icon" variant="ghost" className="size-7" aria-label="מחק בדיקה">
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent dir="rtl">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="text-right">מחיקת בדיקה</AlertDialogTitle>
+                              <AlertDialogDescription className="text-right">
+                                האם למחוק את הבדיקה מתאריך {formatDate(ins.inspection_date)}?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>ביטול</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={async () => {
+                                  try {
+                                    await delInspection.mutateAsync({ id: ins.id, vehicle_id: ins.vehicle_id });
+                                    toast.success("הבדיקה נמחקה");
+                                  } catch {
+                                    toast.error("שגיאה במחיקה");
+                                  }
+                                }}
+                              >
+                                מחק
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                   ))}
                 </div>
