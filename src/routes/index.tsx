@@ -369,7 +369,11 @@ function VehicleCard({
           </div>
           <StatusBadge status={effectiveStatus(v.last_inspection)} />
         </div>
-        {v.notes && <div className="text-sm text-muted-foreground">{v.notes}</div>}
+        {v.notes && (
+          <div className="rounded-md border border-[color:var(--brand)]/30 bg-[color:var(--brand)]/5 p-2 text-sm font-medium text-foreground whitespace-pre-wrap">
+            הערות: {v.notes}
+          </div>
+        )}
         <div className="text-xs text-muted-foreground">
           בדיקה אחרונה: {v.last_inspection ? formatDate(v.last_inspection.inspection_date) : "—"}
         </div>
