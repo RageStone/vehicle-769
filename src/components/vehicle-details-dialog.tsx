@@ -22,6 +22,7 @@ export function VehicleDetailsDialog({
 }) {
   const { data: inspections } = useInspections(vehicle?.id ?? null);
   const del = useDeleteVehicle();
+  const delInspection = useDeleteInspection();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
