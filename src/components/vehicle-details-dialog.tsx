@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useInspections, useDeleteVehicle } from "@/lib/data";
+import { useInspections, useDeleteVehicle, useDeleteInspection } from "@/lib/data";
 import type { Vehicle } from "@/lib/types";
 import { formatDate } from "@/lib/format";
 import { StatusBadge } from "./status-badge";
