@@ -160,3 +160,14 @@ export function useBulkDeleteVehicles() {
     onSuccess: () => invalidate(),
   });
 }
+
+export function useDeleteInspection() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: async (input: { id: string; vehicle_id: string }) => {
+      const { error } = await supabase.from("inspections").delete().eq("id", input.id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => invalidate(vars.vehicle_id),
+  });
+}
