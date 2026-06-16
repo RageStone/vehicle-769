@@ -22,3 +22,14 @@ export function daysSince(iso: string | null | undefined): number | null {
   if (isNaN(then)) return null;
   return Math.floor((Date.now() - then) / 86400000);
 }
+
+export const VALIDITY_DAYS = 7;
+
+import type { Inspection, DisplayStatus } from "./types";
+
+export function effectiveStatus(last: Inspection | null | undefined): DisplayStatus | null {
+  if (!last) return null;
+  const age = daysSince(last.inspection_date) ?? 0;
+  if (last.status === "ok" && age > VALIDITY_DAYS) return "expired";
+  return last.status;
+}
