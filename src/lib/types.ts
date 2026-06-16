@@ -1,4 +1,5 @@
 export type InspectionStatus = "ok" | "not_ok" | "not_checked";
+export type DisplayStatus = InspectionStatus | "expired";
 
 export interface Vehicle {
   id: string;
@@ -26,4 +27,11 @@ export const STATUS_LABEL: Record<InspectionStatus, string> = {
   ok: "תקין",
   not_ok: "לא תקין",
   not_checked: "לא נבדק",
+};
+
+export const DISPLAY_STATUS_LABEL: Record<DisplayStatus, string> = {
+  ok: "תקין",
+  not_ok: "לא תקין",
+  not_checked: "לא נבדק",
+  expired: "פג תוקף",
 };
