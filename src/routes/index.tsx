@@ -273,6 +273,28 @@ function Dashboard() {
             </Select>
           </div>
 
+          {(dateFrom || dateTo) && (
+            <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">
+              <span className="font-medium">בדיקות בין תאריכים:</span>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-8 w-auto"
+              />
+              <span className="text-muted-foreground">עד</span>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-8 w-auto"
+              />
+              <Button size="sm" variant="ghost" onClick={() => { setDateFrom(""); setDateTo(""); }}>
+                <X className="size-4 ms-1" /> נקה טווח
+              </Button>
+            </div>
+          )}
+
           {selected.size > 0 && (
             <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">
               <span className="font-medium">{selected.size} נבחרו</span>
