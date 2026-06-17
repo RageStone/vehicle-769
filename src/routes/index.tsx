@@ -16,7 +16,7 @@ import { InspectionDialog } from "@/components/inspection-dialog";
 import { VehicleFormDialog } from "@/components/vehicle-form-dialog";
 import { VehicleDetailsDialog } from "@/components/vehicle-details-dialog";
 import { toCSV } from "@/lib/parse-import";
-import { Plus, Search, Upload, Download, CheckCheck, Trash2, Pencil, Truck, ListChecks } from "lucide-react";
+import { Plus, Search, Upload, Download, CheckCheck, Trash2, Pencil, Truck, ListChecks, X } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -38,6 +38,7 @@ export const Route = createFileRoute("/")({
 });
 
 type SortKey = "category" | "vehicle_number" | "last_date";
+type StatFilter = null | { kind: "checkedOn"; date: string } | { kind: "overdue"; days: number } | { kind: "never" };
 
 function Dashboard() {
   const { data: vehicles = [], isLoading } = useVehicles();
@@ -45,6 +46,7 @@ function Dashboard() {
   const [category, setCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState<SortKey>("category");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [statFilter, setStatFilter] = useState<StatFilter>(null);
 
   const [inspectionFor, setInspectionFor] = useState<Vehicle | null>(null);
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
@@ -77,6 +79,18 @@ function Dashboard() {
     const q = search.trim().toLowerCase();
     let list = vehicles.filter((v) => {
       if (category !== "all" && v.category !== category) return false;
+      if (statFilter) {
+        const last = v.last_inspection;
+        if (statFilter.kind === "checkedOn") {
+          if (!last || last.inspection_date !== statFilter.date) return false;
+        } else if (statFilter.kind === "overdue") {
+          if (!last) return false;
+          const d = daysSince(last.inspection_date);
+          if (d === null || d <= statFilter.days) return false;
+        } else if (statFilter.kind === "never") {
+          if (last) return false;
+        }
+      }
       if (!q) return true;
       return (
         v.vehicle_number.toLowerCase().includes(q) ||
@@ -94,7 +108,7 @@ function Dashboard() {
       return a.category.localeCompare(b.category, "he") || a.vehicle_number.localeCompare(b.vehicle_number, undefined, { numeric: true });
     });
     return list;
-  }, [vehicles, search, category, sortBy]);
+  }, [vehicles, search, category, sortBy, statFilter]);
 
   const toggleAll = (checked: boolean) => {
     setSelected(checked ? new Set(filtered.map((v) => v.id)) : new Set());
@@ -161,11 +175,67 @@ function Dashboard() {
 
       <main className="mx-auto max-w-6xl space-y-4 px-4 py-4">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard label="סה״כ רכבים" value={stats.total} />
-          <StatCard label="נבדקו היום" value={stats.checkedToday} tone="ok" />
-          <StatCard label="לא נבדקו" value={stats.never} tone="muted" />
-          <StatCard label={`באיחור (>${OVERDUE_DAYS} ימים)`} value={stats.overdue} tone="bad" />
+          <StatCard
+            label="סה״כ רכבים"
+            value={stats.total}
+            active={statFilter === null}
+            onClick={() => setStatFilter(null)}
+          />
+          <StatCard
+            label="נבדקו היום"
+            value={stats.checkedToday}
+            tone="ok"
+            active={statFilter?.kind === "checkedOn"}
+            onClick={() => setStatFilter({ kind: "checkedOn", date: today })}
+          />
+          <StatCard
+            label="לא נבדקו"
+            value={stats.never}
+            tone="muted"
+            active={statFilter?.kind === "never"}
+            onClick={() => setStatFilter({ kind: "never" })}
+          />
+          <StatCard
+            label={`באיחור (>${OVERDUE_DAYS} ימים)`}
+            value={stats.overdue}
+            tone="bad"
+            active={statFilter?.kind === "overdue"}
+            onClick={() => setStatFilter({ kind: "overdue", days: OVERDUE_DAYS })}
+          />
         </div>
+
+        {statFilter && (
+          <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">
+            {statFilter.kind === "checkedOn" && (
+              <>
+                <span className="font-medium">סינון: נבדקו בתאריך</span>
+                <Input
+                  type="date"
+                  value={statFilter.date}
+                  onChange={(e) => setStatFilter({ kind: "checkedOn", date: e.target.value })}
+                  className="h-8 w-auto"
+                />
+              </>
+            )}
+            {statFilter.kind === "overdue" && (
+              <>
+                <span className="font-medium">סינון: באיחור של יותר מ-</span>
+                <Input
+                  type="number"
+                  min={0}
+                  value={statFilter.days}
+                  onChange={(e) => setStatFilter({ kind: "overdue", days: Math.max(0, Number(e.target.value) || 0) })}
+                  className="h-8 w-20"
+                />
+                <span>ימים</span>
+              </>
+            )}
+            {statFilter.kind === "never" && <span className="font-medium">סינון: לא נבדקו מעולם</span>}
+            <Button size="sm" variant="ghost" onClick={() => setStatFilter(null)}>
+              <X className="size-4 ms-1" /> נקה סינון
+            </Button>
+          </div>
+        )}
 
         <div className="sticky top-0 z-20 -mx-4 border-y bg-background/95 px-4 py-3 backdrop-blur">
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -330,14 +400,17 @@ function Dashboard() {
   );
 }
 
-function StatCard({ label, value, tone }: { label: string; value: number; tone?: "ok" | "bad" | "muted" }) {
+function StatCard({ label, value, tone, active, onClick }: { label: string; value: number; tone?: "ok" | "bad" | "muted"; active?: boolean; onClick?: () => void }) {
   const color =
     tone === "ok" ? "text-[color:var(--status-ok)]"
       : tone === "bad" ? "text-[color:var(--status-bad)]"
       : tone === "muted" ? "text-muted-foreground"
       : "text-foreground";
   return (
-    <Card>
+    <Card
+      onClick={onClick}
+      className={`cursor-pointer transition hover:bg-muted/40 ${active ? "ring-2 ring-[color:var(--brand)]" : ""}`}
+    >
       <CardContent className="p-3">
         <div className="text-xs text-muted-foreground">{label}</div>
         <div className={`mt-1 text-2xl font-bold ${color}`}>{value}</div>
