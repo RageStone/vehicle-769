@@ -93,6 +93,12 @@ function Dashboard() {
           if (last) return false;
         }
       }
+      if (dateFrom || dateTo) {
+        const lastDate = v.last_inspection?.inspection_date ?? "";
+        if (!lastDate) return false;
+        if (dateFrom && lastDate < dateFrom) return false;
+        if (dateTo && lastDate > dateTo) return false;
+      }
       if (!q) return true;
       return (
         v.vehicle_number.toLowerCase().includes(q) ||
