@@ -116,7 +116,7 @@ function Dashboard() {
       return a.category.localeCompare(b.category, "he") || a.vehicle_number.localeCompare(b.vehicle_number, undefined, { numeric: true });
     });
     return list;
-  }, [vehicles, search, category, sortBy, statFilter]);
+  }, [vehicles, search, category, sortBy, statFilter, dateFrom, dateTo]);
 
   const toggleAll = (checked: boolean) => {
     setSelected(checked ? new Set(filtered.map((v) => v.id)) : new Set());
