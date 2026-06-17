@@ -282,7 +282,7 @@ function Dashboard() {
             </Button>
           </div>
 
-          {(dateFrom || dateTo) && (
+          {(showDateRange || dateFrom || dateTo) && (
             <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">
               <span className="font-medium">בדיקות בין תאריכים:</span>
               <Input
@@ -298,7 +298,7 @@ function Dashboard() {
                 onChange={(e) => setDateTo(e.target.value)}
                 className="h-8 w-auto"
               />
-              <Button size="sm" variant="ghost" onClick={() => { setDateFrom(""); setDateTo(""); }}>
+              <Button size="sm" variant="ghost" onClick={() => { setDateFrom(""); setDateTo(""); setShowDateRange(false); }}>
                 <X className="size-4 ms-1" /> נקה טווח
               </Button>
             </div>
