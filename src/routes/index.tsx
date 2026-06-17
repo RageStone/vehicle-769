@@ -49,6 +49,7 @@ function Dashboard() {
   const [statFilter, setStatFilter] = useState<StatFilter>(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [showDateRange, setShowDateRange] = useState(false);
 
   const [inspectionFor, setInspectionFor] = useState<Vehicle | null>(null);
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
