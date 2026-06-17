@@ -16,7 +16,7 @@ import { InspectionDialog } from "@/components/inspection-dialog";
 import { VehicleFormDialog } from "@/components/vehicle-form-dialog";
 import { VehicleDetailsDialog } from "@/components/vehicle-details-dialog";
 import { toCSV } from "@/lib/parse-import";
-import { Plus, Search, Upload, Download, CheckCheck, Trash2, Pencil, Truck, ListChecks, X } from "lucide-react";
+import { Plus, Search, Upload, Download, CheckCheck, Trash2, Pencil, Truck, ListChecks, X, Calendar } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -47,6 +47,9 @@ function Dashboard() {
   const [sortBy, setSortBy] = useState<SortKey>("category");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [statFilter, setStatFilter] = useState<StatFilter>(null);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [showDateRange, setShowDateRange] = useState(false);
 
   const [inspectionFor, setInspectionFor] = useState<Vehicle | null>(null);
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
@@ -91,6 +94,12 @@ function Dashboard() {
           if (last) return false;
         }
       }
+      if (dateFrom || dateTo) {
+        const lastDate = v.last_inspection?.inspection_date ?? "";
+        if (!lastDate) return false;
+        if (dateFrom && lastDate < dateFrom) return false;
+        if (dateTo && lastDate > dateTo) return false;
+      }
       if (!q) return true;
       return (
         v.vehicle_number.toLowerCase().includes(q) ||
@@ -108,7 +117,7 @@ function Dashboard() {
       return a.category.localeCompare(b.category, "he") || a.vehicle_number.localeCompare(b.vehicle_number, undefined, { numeric: true });
     });
     return list;
-  }, [vehicles, search, category, sortBy, statFilter]);
+  }, [vehicles, search, category, sortBy, statFilter, dateFrom, dateTo]);
 
   const toggleAll = (checked: boolean) => {
     setSelected(checked ? new Set(filtered.map((v) => v.id)) : new Set());
@@ -263,7 +272,37 @@ function Dashboard() {
                 <SelectItem value="last_date">מיון: בדיקה אחרונה</SelectItem>
               </SelectContent>
             </Select>
+            <Button
+              size="sm"
+              variant={showDateRange || dateFrom || dateTo ? "default" : "outline"}
+              onClick={() => setShowDateRange((s) => !s)}
+              className="h-10"
+            >
+              <Calendar className="size-4 ms-1" /> טווח תאריכים
+            </Button>
           </div>
+
+          {(showDateRange || dateFrom || dateTo) && (
+            <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">
+              <span className="font-medium">בדיקות בין תאריכים:</span>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-8 w-auto"
+              />
+              <span className="text-muted-foreground">עד</span>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-8 w-auto"
+              />
+              <Button size="sm" variant="ghost" onClick={() => { setDateFrom(""); setDateTo(""); setShowDateRange(false); }}>
+                <X className="size-4 ms-1" /> נקה טווח
+              </Button>
+            </div>
+          )}
 
           {selected.size > 0 && (
             <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">
