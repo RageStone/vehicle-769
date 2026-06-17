@@ -47,6 +47,8 @@ function Dashboard() {
   const [sortBy, setSortBy] = useState<SortKey>("category");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [statFilter, setStatFilter] = useState<StatFilter>(null);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const [inspectionFor, setInspectionFor] = useState<Vehicle | null>(null);
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
