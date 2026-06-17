@@ -16,7 +16,7 @@ import { InspectionDialog } from "@/components/inspection-dialog";
 import { VehicleFormDialog } from "@/components/vehicle-form-dialog";
 import { VehicleDetailsDialog } from "@/components/vehicle-details-dialog";
 import { toCSV } from "@/lib/parse-import";
-import { Plus, Search, Upload, Download, CheckCheck, Trash2, Pencil, Truck, ListChecks, X } from "lucide-react";
+import { Plus, Search, Upload, Download, CheckCheck, Trash2, Pencil, Truck, ListChecks, X, Calendar } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
