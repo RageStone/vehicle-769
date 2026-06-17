@@ -272,6 +272,14 @@ function Dashboard() {
                 <SelectItem value="last_date">מיון: בדיקה אחרונה</SelectItem>
               </SelectContent>
             </Select>
+            <Button
+              size="sm"
+              variant={showDateRange || dateFrom || dateTo ? "default" : "outline"}
+              onClick={() => setShowDateRange((s) => !s)}
+              className="h-10"
+            >
+              <Calendar className="size-4 ms-1" /> טווח תאריכים
+            </Button>
           </div>
 
           {(dateFrom || dateTo) && (
