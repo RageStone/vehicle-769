@@ -71,6 +71,7 @@ export function useAddInspection() {
       radio_ok?: boolean;
       shov_ok?: boolean;
       winter_ok?: boolean;
+      fit_ok?: boolean;
     }) => {
       const { error } = await supabase.from("inspections").insert(input);
       if (error) throw error;
