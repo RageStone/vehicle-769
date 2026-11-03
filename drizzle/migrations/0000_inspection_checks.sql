@@ -1,0 +1,1 @@
+ALTER TABLE public.inspections ADD COLUMN radio_ok boolean, ADD COLUMN shov_ok boolean, ADD COLUMN winter_ok boolean;

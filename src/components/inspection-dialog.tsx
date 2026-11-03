@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CHECK_ITEMS } from "@/lib/types";
 import { useAddInspection } from "@/lib/data";
 import { todayISO } from "@/lib/format";
 import type { InspectionStatus, Vehicle } from "@/lib/types";
@@ -20,25 +20,27 @@ export function InspectionDialog({
   onOpenChange: (o: boolean) => void;
 }) {
   const [date, setDate] = useState(todayISO());
-  const [status, setStatus] = useState<InspectionStatus>("ok");
+  const [checks, setChecks] = useState({ radio_ok: true, shov_ok: true, winter_ok: true });
   const [notes, setNotes] = useState("");
   const add = useAddInspection();
 
   useEffect(() => {
     if (open) {
       setDate(todayISO());
-      setStatus("ok");
+      setChecks({ radio_ok: true, shov_ok: true, winter_ok: true });
       setNotes("");
     }
   }, [open]);
 
   const submit = async () => {
     if (!vehicle) return;
+    const status: InspectionStatus = checks.radio_ok && checks.shov_ok && checks.winter_ok ? "ok" : "not_ok";
     try {
       await add.mutateAsync({
         vehicle_id: vehicle.id,
         inspection_date: date,
         status,
+        ...checks,
         notes: notes.trim() || undefined,
       });
       toast.success("הבדיקה נשמרה");
@@ -64,16 +66,18 @@ export function InspectionDialog({
             <Label>תאריך בדיקה</Label>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
-          <div>
-            <Label>סטטוס</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as InspectionStatus)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ok">תקין</SelectItem>
-                <SelectItem value="not_ok">לא תקין</SelectItem>
-                <SelectItem value="not_checked">לא נבדק</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-2">
+            {CHECK_ITEMS.map(({ key, label }) => (
+              <div key={key} className="flex items-center justify-between rounded-md border p-2">
+                <span className="font-medium">{label}</span>
+                <div className="flex gap-2">
+                  <Button type="button" size="sm" variant={checks[key] ? "default" : "outline"}
+                    onClick={() => setChecks((c) => ({ ...c, [key]: true }))}>✅ תקין</Button>
+                  <Button type="button" size="sm" variant={!checks[key] ? "destructive" : "outline"}
+                    onClick={() => setChecks((c) => ({ ...c, [key]: false }))}>❌ לא תקין</Button>
+                </div>
+              </div>
+            ))}
           </div>
           <div>
             <Label>הערות</Label>

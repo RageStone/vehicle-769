@@ -16,6 +16,9 @@ export interface Inspection {
   inspection_date: string;
   status: InspectionStatus;
   notes: string | null;
+  radio_ok: boolean | null;
+  shov_ok: boolean | null;
+  winter_ok: boolean | null;
   created_at: string;
 }
 
@@ -35,3 +38,9 @@ export const DISPLAY_STATUS_LABEL: Record<DisplayStatus, string> = {
   not_checked: "לא נבדק",
   expired: "פג תוקף",
 };
+export type CheckKey = "radio_ok" | "shov_ok" | "winter_ok";
+export const CHECK_ITEMS: { key: CheckKey; label: string }[] = [
+  { key: "radio_ok", label: "רדיו" },
+  { key: "shov_ok", label: "שוב" },
+  { key: "winter_ok", label: "טיפול חורף" },
+];
