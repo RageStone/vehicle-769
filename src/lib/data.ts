@@ -68,6 +68,9 @@ export function useAddInspection() {
       inspection_date: string;
       status: InspectionStatus;
       notes?: string;
+      radio_ok?: boolean;
+      shov_ok?: boolean;
+      winter_ok?: boolean;
     }) => {
       const { error } = await supabase.from("inspections").insert(input);
       if (error) throw error;

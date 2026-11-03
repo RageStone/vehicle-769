@@ -16,6 +16,9 @@ export interface Inspection {
   inspection_date: string;
   status: InspectionStatus;
   notes: string | null;
+  radio_ok: boolean | null;
+  shov_ok: boolean | null;
+  winter_ok: boolean | null;
   created_at: string;
 }
 
