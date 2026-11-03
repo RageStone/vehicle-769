@@ -38,24 +38,33 @@ export type Database = {
           id: string
           inspection_date: string
           notes: string | null
+          radio_ok: boolean | null
+          shov_ok: boolean | null
           status: string
           vehicle_id: string
+          winter_ok: boolean | null
         }
         Insert: {
           created_at?: string
           id?: string
           inspection_date?: string
           notes?: string | null
+          radio_ok?: boolean | null
+          shov_ok?: boolean | null
           status: string
           vehicle_id: string
+          winter_ok?: boolean | null
         }
         Update: {
           created_at?: string
           id?: string
           inspection_date?: string
           notes?: string | null
+          radio_ok?: boolean | null
+          shov_ok?: boolean | null
           status?: string
           vehicle_id?: string
+          winter_ok?: boolean | null
         }
         Relationships: [
           {
