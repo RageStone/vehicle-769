@@ -10,6 +10,8 @@ import { todayISO } from "@/lib/format";
 import type { InspectionStatus, Vehicle } from "@/lib/types";
 import { toast } from "sonner";
 
+const DEFAULT_CHECKS = { radio_ok: false, shov_ok: false, winter_ok: false, fit_ok: false };
+
 export function InspectionDialog({
   vehicle,
   open,
@@ -20,21 +22,21 @@ export function InspectionDialog({
   onOpenChange: (o: boolean) => void;
 }) {
   const [date, setDate] = useState(todayISO());
-  const [checks, setChecks] = useState({ radio_ok: false, shov_ok: false, winter_ok: false });
+  const [checks, setChecks] = useState(DEFAULT_CHECKS);
   const [notes, setNotes] = useState("");
   const add = useAddInspection();
 
   useEffect(() => {
     if (open) {
       setDate(todayISO());
-      setChecks({ radio_ok: false, shov_ok: false, winter_ok: false });
+      setChecks(DEFAULT_CHECKS);
       setNotes("");
     }
   }, [open]);
 
   const submit = async () => {
     if (!vehicle) return;
-    const status: InspectionStatus = checks.radio_ok && checks.shov_ok && checks.winter_ok ? "ok" : "not_ok";
+    const status: InspectionStatus = Object.values(checks).every(Boolean) ? "ok" : "not_ok";
     try {
       await add.mutateAsync({
         vehicle_id: vehicle.id,
@@ -67,14 +69,14 @@ export function InspectionDialog({
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div className="space-y-2">
-            {CHECK_ITEMS.map(({ key, label }) => (
+            {CHECK_ITEMS.map(({ key, label, okLabel, badLabel }) => (
               <div key={key} className="flex items-center justify-between rounded-md border p-2">
                 <span className="font-medium">{label}</span>
                 <div className="flex gap-2">
                   <Button type="button" size="sm" variant={checks[key] ? "default" : "outline"}
-                    onClick={() => setChecks((c) => ({ ...c, [key]: true }))}>✅ תקין</Button>
+                    onClick={() => setChecks((c) => ({ ...c, [key]: true }))}>✅ {okLabel}</Button>
                   <Button type="button" size="sm" variant={!checks[key] ? "destructive" : "outline"}
-                    onClick={() => setChecks((c) => ({ ...c, [key]: false }))}>❌ לא תקין</Button>
+                    onClick={() => setChecks((c) => ({ ...c, [key]: false }))}>❌ {badLabel}</Button>
                 </div>
               </div>
             ))}

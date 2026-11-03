@@ -87,9 +87,11 @@ export function VehicleDetailsDialog({
                     <div key={ins.id} className="flex items-start justify-between gap-2 rounded-md border p-2 text-sm">
                       <div className="flex-1">
                         <div className="font-medium">{formatDate(ins.inspection_date)}</div>
-                        {ins.radio_ok !== null && (
+                        {CHECK_ITEMS.some((c) => ins[c.key] !== null) && (
                           <div className="text-xs">
-                            {CHECK_ITEMS.map((c) => `${c.label} ${ins[c.key] ? "✅" : "❌"}`).join("  ·  ")}
+                            {CHECK_ITEMS.filter((c) => ins[c.key] !== null)
+                              .map((c) => `${c.label} ${ins[c.key] ? "✅" : "❌"}`)
+                              .join("  ·  ")}
                           </div>
                         )}
                         {ins.notes && <div className="text-muted-foreground">{ins.notes}</div>}

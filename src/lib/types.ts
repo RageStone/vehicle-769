@@ -19,6 +19,7 @@ export interface Inspection {
   radio_ok: boolean | null;
   shov_ok: boolean | null;
   winter_ok: boolean | null;
+  fit_ok: boolean | null;
   created_at: string;
 }
 
@@ -38,9 +39,16 @@ export const DISPLAY_STATUS_LABEL: Record<DisplayStatus, string> = {
   not_checked: "לא נבדק",
   expired: "פג תוקף",
 };
-export type CheckKey = "radio_ok" | "shov_ok" | "winter_ok";
-export const CHECK_ITEMS: { key: CheckKey; label: string }[] = [
-  { key: "radio_ok", label: "רדיו" },
-  { key: "shov_ok", label: "שוב" },
-  { key: "winter_ok", label: "טיפול חורף" },
+export type CheckKey = "radio_ok" | "shov_ok" | "winter_ok" | "fit_ok";
+export interface CheckItem {
+  key: CheckKey;
+  label: string;
+  okLabel: string;
+  badLabel: string;
+}
+export const CHECK_ITEMS: CheckItem[] = [
+  { key: "radio_ok", label: "רדיו", okLabel: "תקין", badLabel: "לא תקין" },
+  { key: "shov_ok", label: "שוב", okLabel: "תקין", badLabel: "לא תקין" },
+  { key: "winter_ok", label: "טיפול חורף", okLabel: "תקין", badLabel: "לא תקין" },
+  { key: "fit_ok", label: "כשיר", okLabel: "כשיר", badLabel: "לא כשיר" },
 ];
