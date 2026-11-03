@@ -20,14 +20,14 @@ export function InspectionDialog({
   onOpenChange: (o: boolean) => void;
 }) {
   const [date, setDate] = useState(todayISO());
-  const [checks, setChecks] = useState({ radio_ok: true, shov_ok: true, winter_ok: true });
+  const [checks, setChecks] = useState({ radio_ok: false, shov_ok: false, winter_ok: false });
   const [notes, setNotes] = useState("");
   const add = useAddInspection();
 
   useEffect(() => {
     if (open) {
       setDate(todayISO());
-      setChecks({ radio_ok: true, shov_ok: true, winter_ok: true });
+      setChecks({ radio_ok: false, shov_ok: false, winter_ok: false });
       setNotes("");
     }
   }, [open]);
