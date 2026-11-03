@@ -50,6 +50,10 @@ function Dashboard() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [showDateRange, setShowDateRange] = useState(false);
+  const [lastStatus, setLastStatus] = useState<string>("all") as [
+    "all" | "ok" | "not_ok" | "not_checked" | "radio_ok" | "shov_ok" | "winter_ok",
+    (v: string) => void,
+  ];
 
   const [inspectionFor, setInspectionFor] = useState<Vehicle | null>(null);
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
@@ -94,6 +98,15 @@ function Dashboard() {
           if (last) return false;
         }
       }
+      if (lastStatus !== "all") {
+        const last = v.last_inspection;
+        if (lastStatus === "not_checked") {
+          if (last && last.status !== "not_checked") return false;
+        } else if (!last) return false;
+        else if (lastStatus === "ok" || lastStatus === "not_ok") {
+          if (last.status !== lastStatus) return false;
+        } else if (last[lastStatus] !== false) return false;
+      }
       if (dateFrom || dateTo) {
         const lastDate = v.last_inspection?.inspection_date ?? "";
         if (!lastDate) return false;
@@ -117,7 +130,7 @@ function Dashboard() {
       return a.category.localeCompare(b.category, "he") || a.vehicle_number.localeCompare(b.vehicle_number, undefined, { numeric: true });
     });
     return list;
-  }, [vehicles, search, category, sortBy, statFilter, dateFrom, dateTo]);
+  }, [vehicles, search, category, sortBy, statFilter, dateFrom, dateTo, lastStatus]);
 
   const toggleAll = (checked: boolean) => {
     setSelected(checked ? new Set(filtered.map((v) => v.id)) : new Set());
@@ -270,6 +283,18 @@ function Dashboard() {
                 <SelectItem value="category">מיון: קטגוריה</SelectItem>
                 <SelectItem value="vehicle_number">מיון: מס׳ רכב</SelectItem>
                 <SelectItem value="last_date">מיון: בדיקה אחרונה</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={lastStatus} onValueChange={setLastStatus}>
+              <SelectTrigger className="sm:w-48"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל הסטטוסים</SelectItem>
+                <SelectItem value="ok">תקין</SelectItem>
+                <SelectItem value="not_ok">לא תקין</SelectItem>
+                <SelectItem value="not_checked">לא נבדק</SelectItem>
+                <SelectItem value="radio_ok">רדיו ❌</SelectItem>
+                <SelectItem value="shov_ok">שוב ❌</SelectItem>
+                <SelectItem value="winter_ok">טיפול חורף ❌</SelectItem>
               </SelectContent>
             </Select>
             <Button
