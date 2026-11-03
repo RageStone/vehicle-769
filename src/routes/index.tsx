@@ -12,6 +12,7 @@ import { useBulkDeleteVehicles, useBulkMarkChecked, useVehicles } from "@/lib/da
 import { daysSince, effectiveStatus, formatDate, todayISO } from "@/lib/format";
 import type { Vehicle, VehicleWithLast } from "@/lib/types";
 import { StatusBadge } from "@/components/status-badge";
+import { CheckMarks } from "@/components/check-marks";
 import { InspectionDialog } from "@/components/inspection-dialog";
 import { VehicleFormDialog } from "@/components/vehicle-form-dialog";
 import { VehicleDetailsDialog } from "@/components/vehicle-details-dialog";
@@ -423,7 +424,12 @@ function Dashboard() {
                       </td>
                       <td className="p-2 text-muted-foreground">{v.notes || "—"}</td>
                       <td className="p-2">{v.last_inspection ? formatDate(v.last_inspection.inspection_date) : "—"}</td>
-                      <td className="p-2"><StatusBadge status={effectiveStatus(v.last_inspection)} /></td>
+                      <td className="p-2">
+                        <div className="flex flex-col items-start gap-1">
+                          <StatusBadge status={effectiveStatus(v.last_inspection)} />
+                          <CheckMarks inspection={v.last_inspection} />
+                        </div>
+                      </td>
                       <td className="p-2">
                         <div className="flex justify-end gap-1">
                           <Button size="sm" onClick={() => setInspectionFor(v)}>
@@ -504,7 +510,10 @@ function VehicleCard({
               <div className="text-xs text-muted-foreground">{v.category}</div>
             </button>
           </div>
-          <StatusBadge status={effectiveStatus(v.last_inspection)} />
+          <div className="flex flex-col items-end gap-1">
+            <StatusBadge status={effectiveStatus(v.last_inspection)} />
+            <CheckMarks inspection={v.last_inspection} />
+          </div>
         </div>
         {v.notes && (
           <div className="rounded-md border border-[color:var(--brand)]/30 bg-[color:var(--brand)]/5 p-2 text-sm font-medium text-foreground whitespace-pre-wrap">
