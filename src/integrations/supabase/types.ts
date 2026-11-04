@@ -19,16 +19,19 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -42,6 +45,7 @@ export type Database = {
           radio_ok: boolean | null
           shov_ok: boolean | null
           status: string
+          user_id: string | null
           vehicle_id: string
           winter_ok: boolean | null
         }
@@ -54,6 +58,7 @@ export type Database = {
           radio_ok?: boolean | null
           shov_ok?: boolean | null
           status: string
+          user_id?: string | null
           vehicle_id: string
           winter_ok?: boolean | null
         }
@@ -66,6 +71,7 @@ export type Database = {
           radio_ok?: boolean | null
           shov_ok?: boolean | null
           status?: string
+          user_id?: string | null
           vehicle_id?: string
           winter_ok?: boolean | null
         }
@@ -79,6 +85,24 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          username?: string
+        }
+        Relationships: []
+      }
       vehicles: {
         Row: {
           category: string
@@ -86,6 +110,7 @@ export type Database = {
           id: string
           notes: string | null
           updated_at: string
+          user_id: string | null
           vehicle_number: string
         }
         Insert: {
@@ -94,6 +119,7 @@ export type Database = {
           id?: string
           notes?: string | null
           updated_at?: string
+          user_id?: string | null
           vehicle_number: string
         }
         Update: {
@@ -102,6 +128,7 @@ export type Database = {
           id?: string
           notes?: string | null
           updated_at?: string
+          user_id?: string | null
           vehicle_number?: string
         }
         Relationships: []

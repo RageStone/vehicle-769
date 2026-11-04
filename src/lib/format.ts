@@ -29,7 +29,11 @@ import type { Inspection, DisplayStatus } from "./types";
 
 export function effectiveStatus(last: Inspection | null | undefined): DisplayStatus | null {
   if (!last) return null;
+  if (last.fit_ok === false) return "unfit";
   const age = daysSince(last.inspection_date) ?? 0;
   if (last.status === "ok" && age > VALIDITY_DAYS) return "expired";
   return last.status;
+}
+export function baseStatus(last: Inspection): Inspection["status"] {
+  return last.fit_ok === false ? "unfit" : last.status;
 }

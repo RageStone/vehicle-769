@@ -9,6 +9,8 @@ export function StatusBadge({ status }: { status: DisplayStatus | null | undefin
       ? "bg-[color:var(--status-ok)]/15 text-[color:var(--status-ok)] border-[color:var(--status-ok)]/30"
       : s === "not_ok"
         ? "bg-[color:var(--status-bad)]/15 text-[color:var(--status-bad)] border-[color:var(--status-bad)]/30"
+        : s === "unfit"
+          ? "bg-[color:var(--status-unfit)]/15 text-[color:var(--status-unfit)] border-[color:var(--status-unfit)]/30"
         : s === "expired"
           ? "bg-[color:var(--status-bad)]/10 text-[color:var(--status-bad)] border-[color:var(--status-bad)]/30"
           : "bg-muted text-muted-foreground border-border";

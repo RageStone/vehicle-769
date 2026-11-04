@@ -9,7 +9,7 @@ import { useBulkInsertVehicles } from "@/lib/data";
 import { ArrowRight, Trash2, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/import")({
+export const Route = createFileRoute("/_authenticated/import")({
   head: () => ({
     meta: [
       { title: "ייבוא רכבים" },

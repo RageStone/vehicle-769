@@ -15,6 +15,13 @@
       "when": 1793706473129,
       "tag": "0001_add_fit_ok_to_inspections",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793750615801,
+      "tag": "0002_user_accounts_isolation",
+      "breakpoints": true
     }
   ]
 }

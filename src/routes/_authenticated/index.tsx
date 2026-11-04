@@ -9,7 +9,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { useBulkDeleteVehicles, useBulkMarkChecked, useVehicles } from "@/lib/data";
-import { daysSince, effectiveStatus, formatDate, todayISO } from "@/lib/format";
+import { baseStatus, daysSince, effectiveStatus, formatDate, todayISO } from "@/lib/format";
 import type { Vehicle, VehicleWithLast } from "@/lib/types";
 import { StatusBadge } from "@/components/status-badge";
 import { CheckMarks } from "@/components/check-marks";
@@ -23,10 +23,11 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { SignOutButton } from "@/components/sign-out-button";
 
 const OVERDUE_DAYS = 7;
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "מעקב בדיקות רכבים" },
@@ -52,7 +53,7 @@ function Dashboard() {
   const [dateTo, setDateTo] = useState("");
   const [showDateRange, setShowDateRange] = useState(false);
   const [lastStatus, setLastStatus] = useState<string>("all") as [
-    "all" | "ok" | "not_ok" | "not_checked" | "radio_ok" | "shov_ok" | "winter_ok",
+    "all" | "ok" | "not_ok" | "unfit" | "not_checked" | "radio_ok" | "shov_ok" | "winter_ok",
     (v: string) => void,
   ];
 
@@ -104,8 +105,8 @@ function Dashboard() {
         if (lastStatus === "not_checked") {
           if (last && last.status !== "not_checked") return false;
         } else if (!last) return false;
-        else if (lastStatus === "ok" || lastStatus === "not_ok") {
-          if (last.status !== lastStatus) return false;
+        else if (lastStatus === "ok" || lastStatus === "not_ok" || lastStatus === "unfit") {
+          if (baseStatus(last) !== lastStatus) return false;
         } else if (last[lastStatus] !== false) return false;
       }
       if (dateFrom || dateTo) {
@@ -192,6 +193,7 @@ function Dashboard() {
             <Button size="sm" onClick={() => setAddOpen(true)}>
               <Plus className="size-4 ms-1" /> הוסף רכב
             </Button>
+            <SignOutButton />
           </div>
         </div>
       </header>
@@ -292,6 +294,7 @@ function Dashboard() {
                 <SelectItem value="all">כל הסטטוסים</SelectItem>
                 <SelectItem value="ok">תקין</SelectItem>
                 <SelectItem value="not_ok">לא תקין</SelectItem>
+                <SelectItem value="unfit">לא כשיר</SelectItem>
                 <SelectItem value="not_checked">לא נבדק</SelectItem>
                 <SelectItem value="radio_ok">רדיו ❌</SelectItem>
                 <SelectItem value="shov_ok">שוב ❌</SelectItem>

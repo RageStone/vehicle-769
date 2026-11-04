@@ -100,6 +100,7 @@
 :root {
   --status-ok: oklch(0.65 0.18 145);
   --status-bad: oklch(0.6 0.22 25);
+  --status-unfit: oklch(0.72 0.17 55);
   --status-none: oklch(0.7 0.02 260);
   --brand: oklch(0.55 0.18 250);
 }

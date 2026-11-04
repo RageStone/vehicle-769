@@ -1,4 +1,4 @@
-export type InspectionStatus = "ok" | "not_ok" | "not_checked";
+export type InspectionStatus = "ok" | "not_ok" | "unfit" | "not_checked";
 export type DisplayStatus = InspectionStatus | "expired";
 
 export interface Vehicle {
@@ -30,16 +30,19 @@ export interface VehicleWithLast extends Vehicle {
 export const STATUS_LABEL: Record<InspectionStatus, string> = {
   ok: "תקין",
   not_ok: "לא תקין",
+  unfit: "לא כשיר",
   not_checked: "לא נבדק",
 };
 
 export const DISPLAY_STATUS_LABEL: Record<DisplayStatus, string> = {
   ok: "תקין",
   not_ok: "לא תקין",
+  unfit: "לא כשיר",
   not_checked: "לא נבדק",
   expired: "פג תוקף",
 };
-export type CheckKey = "radio_ok" | "shov_ok" | "winter_ok" | "fit_ok";
+export type CheckKey = "radio_ok" | "shov_ok" | "winter_ok";
+export const FIT_LABELS = { label: "כשירות", okLabel: "כשיר", badLabel: "לא כשיר" };
 export interface CheckItem {
   key: CheckKey;
   label: string;
@@ -50,5 +53,4 @@ export const CHECK_ITEMS: CheckItem[] = [
   { key: "radio_ok", label: "רדיו", okLabel: "תקין", badLabel: "לא תקין" },
   { key: "shov_ok", label: "שוב", okLabel: "תקין", badLabel: "לא תקין" },
   { key: "winter_ok", label: "טיפול חורף", okLabel: "תקין", badLabel: "לא תקין" },
-  { key: "fit_ok", label: "כשיר", okLabel: "כשיר", badLabel: "לא כשיר" },
 ];

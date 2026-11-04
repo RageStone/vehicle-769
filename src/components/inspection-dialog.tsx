@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CHECK_ITEMS } from "@/lib/types";
+import { CHECK_ITEMS, FIT_LABELS } from "@/lib/types";
 import { useAddInspection } from "@/lib/data";
 import { todayISO } from "@/lib/format";
 import type { InspectionStatus, Vehicle } from "@/lib/types";
@@ -36,7 +36,8 @@ export function InspectionDialog({
 
   const submit = async () => {
     if (!vehicle) return;
-    const status: InspectionStatus = Object.values(checks).every(Boolean) ? "ok" : "not_ok";
+    const { fit_ok, ...items } = checks;
+    const status: InspectionStatus = !fit_ok ? "unfit" : Object.values(items).every(Boolean) ? "ok" : "not_ok";
     try {
       await add.mutateAsync({
         vehicle_id: vehicle.id,
@@ -80,6 +81,16 @@ export function InspectionDialog({
                 </div>
               </div>
             ))}
+            <div className="flex items-center justify-between rounded-md border p-2">
+              <span className="font-medium">{FIT_LABELS.label}</span>
+              <div className="flex gap-2">
+                <Button type="button" size="sm" variant={checks.fit_ok ? "default" : "outline"}
+                  onClick={() => setChecks((c) => ({ ...c, fit_ok: true }))}>✅ {FIT_LABELS.okLabel}</Button>
+                <Button type="button" size="sm" variant={!checks.fit_ok ? "outline" : "outline"}
+                  className={!checks.fit_ok ? "border-[color:var(--status-unfit)] bg-[color:var(--status-unfit)]/15 text-[color:var(--status-unfit)]" : ""}
+                  onClick={() => setChecks((c) => ({ ...c, fit_ok: false }))}>{FIT_LABELS.badLabel}</Button>
+              </div>
+            </div>
           </div>
           <div>
             <Label>הערות</Label>

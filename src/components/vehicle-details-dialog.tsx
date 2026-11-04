@@ -1,3 +1,4 @@
+import { baseStatus } from "@/lib/format";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useInspections, useDeleteVehicle, useDeleteInspection } from "@/lib/data";
 import type { Vehicle } from "@/lib/types";
@@ -97,7 +98,7 @@ export function VehicleDetailsDialog({
                         {ins.notes && <div className="text-muted-foreground">{ins.notes}</div>}
                       </div>
                       <div className="flex items-center gap-2">
-                        <StatusBadge status={ins.status} />
+                        <StatusBadge status={baseStatus(ins)} />
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button size="icon" variant="ghost" className="size-7" aria-label="מחק בדיקה">
