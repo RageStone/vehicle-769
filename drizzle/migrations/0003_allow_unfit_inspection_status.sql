@@ -1,0 +1,2 @@
+ALTER TABLE public.inspections DROP CONSTRAINT inspections_status_check;
+ALTER TABLE public.inspections ADD CONSTRAINT inspections_status_check CHECK (status IN ('ok', 'not_ok', 'unfit', 'not_checked'));

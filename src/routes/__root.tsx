@@ -90,8 +90,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "מעקב בדיקות רכבים" },
       { name: "twitter:description", content: "מערכת לניהול ומעקב בדיקות רכבים" },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4c8c84d4-e032-42b4-9b26-3f06281c3661/id-preview-74862d03--d51e6d99-42f6-4089-8d93-77e71050f930.lovable.app-1781511087990.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4c8c84d4-e032-42b4-9b26-3f06281c3661/id-preview-74862d03--d51e6d99-42f6-4089-8d93-77e71050f930.lovable.app-1781511087990.png" },
     ],
     links: [
       {

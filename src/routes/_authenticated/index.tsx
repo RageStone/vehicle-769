@@ -34,6 +34,8 @@ export const Route = createFileRoute("/_authenticated/")({
       { name: "description", content: "מערכת לניהול ומעקב בדיקות רכבים" },
       { property: "og:title", content: "מעקב בדיקות רכבים" },
       { property: "og:description", content: "מערכת לניהול ומעקב בדיקות רכבים" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Dashboard,

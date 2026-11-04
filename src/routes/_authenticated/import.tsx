@@ -12,8 +12,12 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/import")({
   head: () => ({
     meta: [
-      { title: "ייבוא רכבים" },
+      { title: "ייבוא רכבים — מעקב בדיקות רכבים" },
       { name: "description", content: "ייבוא רשימת רכבים מטקסט או קובץ" },
+      { property: "og:title", content: "ייבוא רכבים — מעקב בדיקות רכבים" },
+      { property: "og:description", content: "ייבוא רשימת רכבים מטקסט או קובץ" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ImportPage,

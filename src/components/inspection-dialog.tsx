@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { CHECK_ITEMS, FIT_LABELS } from "@/lib/types";
 import { useAddInspection } from "@/lib/data";
 import { todayISO } from "@/lib/format";
-import type { InspectionStatus, Vehicle } from "@/lib/types";
+import type { Vehicle } from "@/lib/types";
+import { inspectionStatus } from "@/lib/inspection-status";
 import { toast } from "sonner";
 
 const DEFAULT_CHECKS = { radio_ok: false, shov_ok: false, winter_ok: false, fit_ok: false };
@@ -36,8 +37,7 @@ export function InspectionDialog({
 
   const submit = async () => {
     if (!vehicle) return;
-    const { fit_ok, ...items } = checks;
-    const status: InspectionStatus = !fit_ok ? "unfit" : Object.values(items).every(Boolean) ? "ok" : "not_ok";
+    const status = inspectionStatus(checks);
     try {
       await add.mutateAsync({
         vehicle_id: vehicle.id,

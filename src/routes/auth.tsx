@@ -33,6 +33,8 @@ export const Route = createFileRoute("/auth")({
       { name: "description", content: "כניסה או יצירת משתמש במערכת מעקב בדיקות רכבים" },
       { property: "og:title", content: "כניסה — מעקב בדיקות רכבים" },
       { property: "og:description", content: "כניסה או יצירת משתמש במערכת מעקב בדיקות רכבים" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,
