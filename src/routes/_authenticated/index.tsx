@@ -183,12 +183,12 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
           <div className="flex items-center gap-2">
             <Truck className="size-5 text-[color:var(--brand)]" />
             <h1 className="text-lg font-bold">מעקב בדיקות רכבים</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button asChild variant="outline" size="sm">
               <Link to="/import"><Upload className="size-4 ms-1" /> ייבוא</Link>
             </Button>
@@ -508,8 +508,8 @@ function VehicleCard({
     <Card>
       <CardContent className="space-y-2 p-3">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-start gap-2">
-            <Checkbox checked={selected} onCheckedChange={(c) => onToggle(!!c)} className="mt-1" />
+          <div className="flex min-w-0 items-start gap-2">
+            <Checkbox checked={selected} onCheckedChange={(c) => onToggle(!!c)} className="mt-1 shrink-0" />
             <button onClick={onOpen} className="text-right">
               <div className="font-bold">{v.vehicle_number}</div>
               <div className="text-xs text-muted-foreground">{v.category}</div>

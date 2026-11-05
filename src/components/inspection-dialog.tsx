@@ -56,7 +56,7 @@ export function InspectionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent dir="rtl">
+      <DialogContent dir="rtl" className="max-h-[90vh] max-w-[calc(100vw-2rem)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-right">בדיקה חדשה{vehicle ? ` — ${vehicle.vehicle_number}` : ""}</DialogTitle>
         </DialogHeader>
@@ -71,24 +71,33 @@ export function InspectionDialog({
           </div>
           <div className="space-y-2">
             {CHECK_ITEMS.map(({ key, label, okLabel, badLabel }) => (
-              <div key={key} className="flex items-center justify-between rounded-md border p-2">
-                <span className="font-medium">{label}</span>
-                <div className="flex gap-2">
-                  <Button type="button" size="sm" variant={checks[key] ? "default" : "outline"}
+              <div key={key} className="rounded-md border p-2">
+                <div className="mb-2 text-sm font-medium">{label}</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button type="button" variant={checks[key] ? "default" : "outline"} className="w-full"
                     onClick={() => setChecks((c) => ({ ...c, [key]: true }))}>✅ {okLabel}</Button>
-                  <Button type="button" size="sm" variant={!checks[key] ? "destructive" : "outline"}
+                  <Button type="button" variant={!checks[key] ? "destructive" : "outline"} className="w-full"
                     onClick={() => setChecks((c) => ({ ...c, [key]: false }))}>❌ {badLabel}</Button>
                 </div>
               </div>
             ))}
-            <div className="flex items-center justify-between rounded-md border p-2">
-              <span className="font-medium">{FIT_LABELS.label}</span>
-              <div className="flex gap-2">
-                <Button type="button" size="sm" variant={checks.fit_ok ? "default" : "outline"}
+            <div className="rounded-md border p-2">
+              <div className="mb-2 text-sm font-medium">{FIT_LABELS.label}</div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" variant={checks.fit_ok ? "default" : "outline"} className="w-full"
                   onClick={() => setChecks((c) => ({ ...c, fit_ok: true }))}>✅ {FIT_LABELS.okLabel}</Button>
-                <Button type="button" size="sm" variant={!checks.fit_ok ? "outline" : "outline"}
-                  className={!checks.fit_ok ? "border-[color:var(--status-unfit)] bg-[color:var(--status-unfit)]/15 text-[color:var(--status-unfit)]" : ""}
-                  onClick={() => setChecks((c) => ({ ...c, fit_ok: false }))}>{FIT_LABELS.badLabel}</Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={
+                    checks.fit_ok
+                      ? "w-full"
+                      : "w-full border-[color:var(--status-unfit)] bg-[color:var(--status-unfit)] text-white hover:bg-[color:var(--status-unfit)]/90 hover:text-white"
+                  }
+                  onClick={() => setChecks((c) => ({ ...c, fit_ok: false }))}
+                >
+                  ❌ {FIT_LABELS.badLabel}
+                </Button>
               </div>
             </div>
           </div>

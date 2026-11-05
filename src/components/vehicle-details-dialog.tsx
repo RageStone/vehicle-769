@@ -28,7 +28,7 @@ export function VehicleDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent dir="rtl" className="max-h-[85vh] overflow-y-auto">
+      <DialogContent dir="rtl" className="max-h-[85vh] max-w-[calc(100vw-2rem)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-right">פרטי רכב</DialogTitle>
         </DialogHeader>
