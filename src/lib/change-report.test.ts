@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { buildChangeReport, H } from "./change-report";
 import type { Inspection, Vehicle } from "./types";
 
