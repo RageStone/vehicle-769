@@ -1,4 +1,6 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it } from "node:test";
+import { strictEqual } from "node:assert";
+const expect = (a: unknown) => ({ toBe: (b: unknown) => strictEqual(a, b), toHaveLength: (n: number) => strictEqual((a as unknown[]).length, n) });
 import { buildChangeReport, H } from "./change-report";
 import type { Inspection, Vehicle } from "./types";
 
