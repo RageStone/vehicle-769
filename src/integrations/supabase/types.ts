@@ -103,6 +103,41 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_note_changes: {
+        Row: {
+          changed_at: string
+          id: string
+          new_notes: string | null
+          old_notes: string | null
+          user_id: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          changed_at?: string
+          id?: string
+          new_notes?: string | null
+          old_notes?: string | null
+          user_id?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          changed_at?: string
+          id?: string
+          new_notes?: string | null
+          old_notes?: string | null
+          user_id?: string | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_note_changes_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           category: string

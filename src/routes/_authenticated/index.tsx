@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { SignOutButton } from "@/components/sign-out-button";
+import { ChangeReportDialog } from "@/components/change-report-dialog";
 
 const OVERDUE_DAYS = 7;
 
@@ -63,6 +64,7 @@ function Dashboard() {
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [detailsVehicle, setDetailsVehicle] = useState<Vehicle | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const bulkMark = useBulkMarkChecked();
   const bulkDelete = useBulkDeleteVehicles();
@@ -367,9 +369,15 @@ function Dashboard() {
 
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <div>{filtered.length} רכבים</div>
+          <div className="flex flex-wrap gap-1">
           <Button size="sm" variant="ghost" onClick={exportCSV}>
             <Download className="size-4 ms-1" /> ייצוא CSV
           </Button>
+          <Button size="sm" variant="ghost" onClick={() => setReportOpen(true)}>
+            <Download className="size-4 ms-1" /> דוח שינויים
+          </Button>
+          </div>
+          <ChangeReportDialog open={reportOpen} onOpenChange={setReportOpen} categories={categories} />
         </div>
 
         {isLoading ? (

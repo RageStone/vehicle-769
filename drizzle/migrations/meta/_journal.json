@@ -29,6 +29,13 @@
       "when": 1793777412817,
       "tag": "0003_allow_unfit_inspection_status",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793980272906,
+      "tag": "0004_vehicle_note_changes",
+      "breakpoints": true
     }
   ]
 }
