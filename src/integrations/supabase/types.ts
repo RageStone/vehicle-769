@@ -103,6 +103,164 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_credentials: {
+        Row: {
+          ciphertext: string
+          key_version: number
+          user_id: string
+        }
+        Insert: {
+          ciphertext: string
+          key_version?: number
+          user_id: string
+        }
+        Update: {
+          ciphertext?: string
+          key_version?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_credentials_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "telegram_settings"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      telegram_reports: {
+        Row: {
+          changes_count: number
+          claimed_at: string
+          delivery_status: string
+          id: string
+          last_error: string | null
+          period_end: string
+          period_start: string
+          send_attempts: number
+          sent_at: string | null
+          telegram_message_id: number | null
+          tests_count: number
+          user_id: string
+          vehicles_count: number
+        }
+        Insert: {
+          changes_count?: number
+          claimed_at?: string
+          delivery_status?: string
+          id?: string
+          last_error?: string | null
+          period_end: string
+          period_start: string
+          send_attempts?: number
+          sent_at?: string | null
+          telegram_message_id?: number | null
+          tests_count?: number
+          user_id: string
+          vehicles_count?: number
+        }
+        Update: {
+          changes_count?: number
+          claimed_at?: string
+          delivery_status?: string
+          id?: string
+          last_error?: string | null
+          period_end?: string
+          period_start?: string
+          send_attempts?: number
+          sent_at?: string | null
+          telegram_message_id?: number | null
+          tests_count?: number
+          user_id?: string
+          vehicles_count?: number
+        }
+        Relationships: []
+      }
+      telegram_settings: {
+        Row: {
+          connection_verified: boolean
+          created_at: string
+          enabled: boolean
+          enabled_at: string | null
+          last_error: string | null
+          last_success_at: string | null
+          telegram_bot_id: number
+          telegram_bot_username: string
+          telegram_chat_id: string
+          telegram_chat_title: string
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          connection_verified?: boolean
+          created_at?: string
+          enabled?: boolean
+          enabled_at?: string | null
+          last_error?: string | null
+          last_success_at?: string | null
+          telegram_bot_id: number
+          telegram_bot_username: string
+          telegram_chat_id: string
+          telegram_chat_title: string
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          connection_verified?: boolean
+          created_at?: string
+          enabled?: boolean
+          enabled_at?: string | null
+          last_error?: string | null
+          last_success_at?: string | null
+          telegram_bot_id?: number
+          telegram_bot_username?: string
+          telegram_chat_id?: string
+          telegram_chat_title?: string
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
+      vehicle_audit_events: {
+        Row: {
+          actor_id: string | null
+          after_values: Json | null
+          before_values: Json | null
+          changed_fields: string[]
+          event_type: string
+          id: string
+          occurred_at: string
+          owner_at_event: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          after_values?: Json | null
+          before_values?: Json | null
+          changed_fields: string[]
+          event_type: string
+          id?: string
+          occurred_at?: string
+          owner_at_event?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          after_values?: Json | null
+          before_values?: Json | null
+          changed_fields?: string[]
+          event_type?: string
+          id?: string
+          occurred_at?: string
+          owner_at_event?: string | null
+          vehicle_id?: string
+        }
+        Relationships: []
+      }
       vehicle_note_changes: {
         Row: {
           changed_at: string
@@ -173,7 +331,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_telegram_report: {
+        Args: { p_end: string; p_start: string; p_user_id: string }
+        Returns: string
+      }
+      save_verified_telegram_config: {
+        Args: {
+          p_bot_id: number
+          p_chat_id: string
+          p_ciphertext: string
+          p_title: string
+          p_user_id: string
+          p_username: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
