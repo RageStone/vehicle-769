@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedImportRouteImport } from './routes/_authenticated/import'
+import { Route as ApiPublicTelegramProcessRouteImport } from './routes/api/public/telegram/process'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -33,16 +34,24 @@ const AuthenticatedImportRoute = AuthenticatedImportRouteImport.update({
   path: '/import',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicTelegramProcessRoute =
+  ApiPublicTelegramProcessRouteImport.update({
+    id: '/api/public/telegram/process',
+    path: '/api/public/telegram/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/import': typeof AuthenticatedImportRoute
+  '/api/public/telegram/process': typeof ApiPublicTelegramProcessRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/import': typeof AuthenticatedImportRoute
   '/': typeof AuthenticatedIndexRoute
+  '/api/public/telegram/process': typeof ApiPublicTelegramProcessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -50,23 +59,26 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/import': typeof AuthenticatedImportRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/api/public/telegram/process': typeof ApiPublicTelegramProcessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/import'
+  fullPaths: '/' | '/auth' | '/import' | '/api/public/telegram/process'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/import' | '/'
+  to: '/auth' | '/import' | '/' | '/api/public/telegram/process'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/import'
     | '/_authenticated/'
+    | '/api/public/telegram/process'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicTelegramProcessRoute: typeof ApiPublicTelegramProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +111,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedImportRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/telegram/process': {
+      id: '/api/public/telegram/process'
+      path: '/api/public/telegram/process'
+      fullPath: '/api/public/telegram/process'
+      preLoaderRoute: typeof ApiPublicTelegramProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -118,6 +137,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicTelegramProcessRoute: ApiPublicTelegramProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

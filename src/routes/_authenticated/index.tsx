@@ -25,6 +25,7 @@ import {
 import { toast } from "sonner";
 import { SignOutButton } from "@/components/sign-out-button";
 import { ChangeReportDialog } from "@/components/change-report-dialog";
+import { TelegramSettingsButton } from "@/components/telegram-settings-dialog";
 
 const OVERDUE_DAYS = 7;
 
@@ -197,6 +198,7 @@ function Dashboard() {
             <Button size="sm" onClick={() => setAddOpen(true)}>
               <Plus className="size-4 ms-1" /> הוסף רכב
             </Button>
+            <TelegramSettingsButton />
             <SignOutButton />
           </div>
         </div>
