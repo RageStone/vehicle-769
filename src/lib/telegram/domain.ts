@@ -32,8 +32,14 @@ export function summarize(events: AuditEvent[]) {
   return { changes_count: events.length, vehicles_count: new Set(events.map(e => e.vehicle_id)).size, tests_count: events.filter(e => e.event_type === 'inspection_insert').length };
 }
 export const formatIsrael = (iso: string) => new Intl.DateTimeFormat('he-IL', { timeZone: ZONE, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
+export function reportDate(iso: string) { const { day } = localParts(new Date(iso)); return day.split('-').reverse().join('/'); }
+export function nextDuePeriod(enabledAt: string, previousEnd: string | undefined, now: Date) {
+  const cursor = previousEnd && previousEnd > enabledAt ? previousEnd : enabledAt;
+  const period = reportPeriod(new Date(Date.parse(cursor) + 1000), true);
+  return period.end <= reportPeriod(now).end ? period : null;
+}
 export function reportMessage(period: { start: string; end: string }, counts: ReturnType<typeof summarize>) {
-  const date = formatIsrael(period.end).split(',')[0];
+  const date = reportDate(period.end);
   if (!counts.changes_count) return `🚗 דוח עדכוני רכבים יומי\n📅 ${date}\n\n✅ לא בוצעו עדכונים במערכת בתקופת הדיווח.\n\n🔗 ${APP_URL}`;
   return `🚗 דוח עדכוני רכבים יומי\n📅 ${date}\n\n🕒 תקופת דיווח:\n${formatIsrael(period.start)} – ${formatIsrael(period.end)}\n\n📊 סיכום פעילות\n\n📝 סה״כ שינויים: ${counts.changes_count}\n🚙 רכבים שעודכנו: ${counts.vehicles_count}\n🔧 בדיקות שבוצעו: ${counts.tests_count}\n\n🔗 לצפייה בדוח:\n${APP_URL}`;
 }

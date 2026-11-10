@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 import { decryptToken, encryptToken } from './crypto.server';
 import { sendMessage, TelegramFailure, verifyDestination } from './api.server';
-import { eligibleEvents, reportMessage, reportPeriod, summarize, TEST_MESSAGE } from './domain';
+import { eligibleEvents, nextDuePeriod, reportMessage, reportPeriod, summarize, TEST_MESSAGE } from './domain';
 export async function storedToken(userId: string) {
   const { data, error } = await supabaseAdmin.from('telegram_credentials').select('ciphertext').eq('user_id', userId).single();
   if (error || !data) throw new Error('חבר קודם בוט אישי');
@@ -53,9 +53,8 @@ export async function processDueReports() {
     // Only periods completed since the user explicitly enabled delivery are eligible.
     if (!config.enabled_at || latest.end <= config.enabled_at) continue;
     const { data: previous } = await supabaseAdmin.from('telegram_reports').select('period_end').eq('user_id', config.user_id).order('period_end', { ascending: false }).limit(1);
-    const cursor = previous?.[0]?.period_end ?? config.enabled_at;
-    const period = reportPeriod(new Date(Date.parse(cursor) + 1000), true);
-    if (period.end > latest.end) continue;
+    const period = nextDuePeriod(config.enabled_at, previous?.[0]?.period_end, now);
+    if (!period) continue;
     const { data: id, error: claimError } = await supabaseAdmin.rpc('claim_telegram_report', { p_user_id: config.user_id, p_start: period.start, p_end: period.end });
     if (claimError || !id) continue;
     processed++;

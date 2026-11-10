@@ -331,9 +331,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_read_vehicle_audit: {
+        Args: { p_event_owner: string; p_vehicle_id: string }
+        Returns: boolean
+      }
       claim_telegram_report: {
         Args: { p_end: string; p_start: string; p_user_id: string }
         Returns: string
+      }
+      install_telegram_schedule: {
+        Args: { p_secret: string; p_url: string }
+        Returns: number
       }
       save_verified_telegram_config: {
         Args: {
