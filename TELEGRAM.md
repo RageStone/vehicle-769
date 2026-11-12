@@ -33,3 +33,12 @@ Settings changes and pauses are checked immediately before sending; a Telegram r
 ## Live verification still required
 
 Local tests cannot prove production migrations, RLS policies, secrets, scheduler installation, actual bot permissions, or delivery. Verify with two test accounts that each account can read only its own settings/history/audit events and cannot access encrypted credentials. Test a real aggregate report before treating alerts as operational. Live account IDs and the encryption key must survive any database migration.
+
+## Verification on 12 November 2026
+
+- 31 automated tests passed, including account-bound encryption, ownership filtering, Israel time changes, overlapping invocations, and ambiguous delivery. TypeScript, changed-file lint, and the production build passed.
+- Local unauthenticated/invalid scheduler requests returned 401.
+- Published the updated app. Installed the production-targeted hourly job with the existing scheduler secret retained in Vault.
+- Sent the user-approved test message through the production app and observed it in the configured Telegram channel. Enabled automatic daily reporting; the UI shows the first scheduled report on 13 November 2026 at 20:00 Asia/Jerusalem.
+- A future scheduled daily delivery has not yet occurred; the test message is separate from daily report history.
+- The authenticated production scheduler probe returned HTTP 200 with processed: 0, consistent with the next period being due tomorrow.
