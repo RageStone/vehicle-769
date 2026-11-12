@@ -17,7 +17,7 @@ Never prefix private keys with `VITE_`. Do not put them in tracked `.env` or com
 
 ## Deployment and activation
 
-1. Apply missing existing migrations in order, followed by `drizzle/migrations/0008_portable_telegram_scheduler.sql`. On a fresh database, the initial schema in `supabase/migrations` is required before the Drizzle migrations. Do not replay applied migrations on the production database.
+1. Ensure Vault, pg_cron, and pg_net are installed (already present in this live project). Apply missing existing migrations in order, followed by `drizzle/migrations/0008_portable_telegram_scheduler.sql`. On a fresh database, the initial schema in `supabase/migrations` is required before the Drizzle migrations. Do not replay applied migrations on the production database.
 2. Set server secrets in the hosting dashboard, deploy the code, and check the protected `/api/public/telegram/process` endpoint rejects an unauthenticated POST with 401.
 3. Put the destination Supabase URL, service-role key, APP_URL, and matching scheduler secret into ignored `.env.local`, then run `npm run telegram:setup`. This replaces the shared `personal-telegram-daily` job and stores its bearer secret in Vault rather than the cron command text. The setup does not send messages.
 4. In the app, connect a bot, verify its destination, save, and send a test message using the confirmation dialog. Start a private conversation with the bot first, or grant posting rights in the destination group/channel.

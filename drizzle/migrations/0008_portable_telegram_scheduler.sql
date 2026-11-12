@@ -1,5 +1,5 @@
 -- Replace the development-only scheduler with a portable, service-role-only setup.
-CREATE EXTENSION IF NOT EXISTS supabase_vault WITH SCHEMA vault;
+-- Requires the existing Vault extension; managed Lovable blocks redundant CREATE EXTENSION statements.
 CREATE OR REPLACE FUNCTION public.install_telegram_schedule(p_secret text, p_url text)
 RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 DECLARE job_id bigint; existing bigint; secret_id uuid;
