@@ -42,3 +42,11 @@ Local tests cannot prove production migrations, RLS policies, secrets, scheduler
 - Sent the user-approved test message through the production app and observed it in the configured Telegram channel. Enabled automatic daily reporting; the UI shows the first scheduled report on 13 November 2026 at 20:00 Asia/Jerusalem.
 - A future scheduled daily delivery has not yet occurred; the test message is separate from daily report history.
 - The authenticated production scheduler probe returned HTTP 200 with processed: 0, consistent with the next period being due tomorrow.
+
+## Personal controls
+
+Each connected user can save a whole report hour (00:00–23:00, Asia/Jerusalem). The shared hourly job checks each user independently. Changing the hour applies going forward, including daylight-saving changes. Manual delivery sends the current period up to now with a separate idempotency key and history label; it does not advance the automatic reporting cursor and also works while automatic reports are paused.
+
+The website report details show actual vehicle number and category/name/notes. New inspection audits preserve the preceding inspection snapshot; legacy insert audits use available earlier inspections from the same account. If no earlier inspection is available, the UI says so. Telegram messages remain aggregate-only.
+
+The overdue card is an accessible touch button. The account can save an overdue threshold from 0 to 365 calendar days; dashboard counts, filter results, and expired badges use the same saved value on desktop and mobile.

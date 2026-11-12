@@ -87,16 +87,19 @@ export type Database = {
       }
       profiles: {
         Row: {
+          overdue_days: number
           created_at: string
           id: string
           username: string
         }
         Insert: {
+          overdue_days?: number
           created_at?: string
           id: string
           username: string
         }
         Update: {
+          overdue_days?: number
           created_at?: string
           id?: string
           username?: string
@@ -131,6 +134,8 @@ export type Database = {
       }
       telegram_reports: {
         Row: {
+          request_key: string | null
+          delivery_kind: string
           changes_count: number
           claimed_at: string
           delivery_status: string
@@ -146,6 +151,8 @@ export type Database = {
           vehicles_count: number
         }
         Insert: {
+          request_key?: string | null
+          delivery_kind?: string
           changes_count?: number
           claimed_at?: string
           delivery_status?: string
@@ -161,6 +168,8 @@ export type Database = {
           vehicles_count?: number
         }
         Update: {
+          request_key?: string | null
+          delivery_kind?: string
           changes_count?: number
           claimed_at?: string
           delivery_status?: string
@@ -179,6 +188,8 @@ export type Database = {
       }
       telegram_settings: {
         Row: {
+          report_hour: number
+          schedule_changed_at: string | null
           connection_verified: boolean
           created_at: string
           enabled: boolean
@@ -194,6 +205,8 @@ export type Database = {
           verified_at: string | null
         }
         Insert: {
+          report_hour?: number
+          schedule_changed_at?: string | null
           connection_verified?: boolean
           created_at?: string
           enabled?: boolean
@@ -209,6 +222,8 @@ export type Database = {
           verified_at?: string | null
         }
         Update: {
+          report_hour?: number
+          schedule_changed_at?: string | null
           connection_verified?: boolean
           created_at?: string
           enabled?: boolean
@@ -227,6 +242,7 @@ export type Database = {
       }
       vehicle_audit_events: {
         Row: {
+          vehicle_snapshot: Json | null
           actor_id: string | null
           after_values: Json | null
           before_values: Json | null
@@ -238,6 +254,7 @@ export type Database = {
           vehicle_id: string
         }
         Insert: {
+          vehicle_snapshot?: Json | null
           actor_id?: string | null
           after_values?: Json | null
           before_values?: Json | null
@@ -249,6 +266,7 @@ export type Database = {
           vehicle_id: string
         }
         Update: {
+          vehicle_snapshot?: Json | null
           actor_id?: string | null
           after_values?: Json | null
           before_values?: Json | null
@@ -331,6 +349,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_manual_telegram_report: { Args: {p_user_id:string;p_request_key:string;p_start:string;p_end:string}; Returns:string }
+
       can_read_vehicle_audit: {
         Args: { p_event_owner: string; p_vehicle_id: string }
         Returns: boolean

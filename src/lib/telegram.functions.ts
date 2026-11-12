@@ -30,7 +30,9 @@ export const getTelegramSettings = createServerFn({ method: "POST" })
     return {
       settings: settings.data,
       history: history.data ?? [],
-      next: settings.data?.enabled ? reportPeriod(new Date(), true).end : null,
+      next: settings.data?.enabled
+        ? reportPeriod(new Date(), true, settings.data.report_hour).end
+        : null,
     };
   });
 export const verifyUserTelegramBot = createServerFn({ method: "POST" })
@@ -99,5 +101,42 @@ export const previewUserDailyReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { generateReport } = await import("./telegram/service.server");
-    return generateReport(context.supabase, context.userId, reportPeriod(new Date(), true), true);
+    const { data: settings, error } = await context.supabase
+      .from("telegram_settings")
+      .select("report_hour")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (error) throw new Error("טעינת שעת הדיווח נכשלה");
+    return generateReport(
+      context.supabase,
+      context.userId,
+      reportPeriod(new Date(), true, settings?.report_hour ?? 20),
+      true,
+    );
+  });
+
+export const sendUserDailyReport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ confirmed: z.literal(true), requestKey: z.string().uuid() }))
+  .handler(async ({ context, data }) => {
+    const { manualDailyReport } = await import("./telegram/service.server");
+    return manualDailyReport(context.userId, data.requestKey);
+  });
+export const saveUserReportHour = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ hour: z.number().int().min(0).max(23) }))
+  .handler(async ({ context, data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const result = await supabaseAdmin
+      .from("telegram_settings")
+      .update({
+        report_hour: data.hour,
+        schedule_changed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", context.userId)
+      .select("report_hour")
+      .single();
+    if (result.error) throw new Error("שמירת שעת הדיווח נכשלה");
+    return result.data;
   });

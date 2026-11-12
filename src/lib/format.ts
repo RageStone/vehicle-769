@@ -18,20 +18,27 @@ export function todayISO(): string {
 
 export function daysSince(iso: string | null | undefined): number | null {
   if (!iso) return null;
-  const then = new Date(iso).getTime();
-  if (isNaN(then)) return null;
-  return Math.floor((Date.now() - then) / 86400000);
+  // Compare calendar dates, avoiding mobile date parsing and DST-hour differences.
+  const parts = iso.slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!parts) return null;
+  const then = Date.UTC(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3]));
+  const now = new Date();
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.floor((today - then) / 86400000);
 }
 
 export const VALIDITY_DAYS = 7;
 
 import type { Inspection, DisplayStatus } from "./types";
 
-export function effectiveStatus(last: Inspection | null | undefined): DisplayStatus | null {
+export function effectiveStatus(
+  last: Inspection | null | undefined,
+  validityDays = VALIDITY_DAYS,
+): DisplayStatus | null {
   if (!last) return null;
   if (last.fit_ok === false) return "unfit";
   const age = daysSince(last.inspection_date) ?? 0;
-  if (last.status === "ok" && age > VALIDITY_DAYS) return "expired";
+  if (last.status === "ok" && age > validityDays) return "expired";
   return last.status;
 }
 export function baseStatus(last: Inspection): Inspection["status"] {

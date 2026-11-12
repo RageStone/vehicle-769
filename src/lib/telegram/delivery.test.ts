@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import { strictEqual, rejects } from "node:assert";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../integrations/supabase/types";
-import { processReports } from "./service.server";
+import { processReports, sendManualReport } from "./service.server";
 import { TelegramFailure } from "./api.server";
 
 function fixture(
@@ -18,7 +18,8 @@ function fixture(
 ) {
   const configs = ["A", "B"].map((user_id) => ({
     user_id,
-    enabled: true,
+    enabled: !options.paused,
+    report_hour: 20,
     connection_verified: true,
     enabled_at: "2026-11-08T10:00:00.000Z",
     updated_at: "version-1",
@@ -62,17 +63,30 @@ function fixture(
               if (table === "telegram_settings") {
                 if (patch) return { data: null, error: null };
                 if (filters.user_id)
-                  return {
-                    data: { enabled: !options.paused, updated_at: "version-1" },
-                    error: options.settingsFailure ? { message: "offline" } : null,
-                  };
+                  return columns === "*"
+                    ? { data: configs.find((c) => c.user_id === filters.user_id), error: null }
+                    : {
+                        data: { enabled: !options.paused, updated_at: "version-1" },
+                        error: options.settingsFailure ? { message: "offline" } : null,
+                      };
                 return { data: configs, error: null };
               }
               if (!patch) {
+                if (filters.request_key)
+                  return {
+                    data: [...reports.values()].find(
+                      (r) => r.request_key === filters.request_key && r.user_id === filters.user_id,
+                    ),
+                    error: null,
+                  };
                 if (options.historyFailure && filters.user_id === "A")
                   return { data: null, error: { message: "offline" } };
                 return {
-                  data: [...reports.values()].filter((r) => r.user_id === filters.user_id),
+                  data: [...reports.values()].filter(
+                    (r) =>
+                      r.user_id === filters.user_id &&
+                      (!filters.delivery_kind || r.delivery_kind === filters.delivery_kind),
+                  ),
                   error: null,
                 };
               }
@@ -94,12 +108,18 @@ function fixture(
       };
       return q;
     },
-    async rpc(_name: string, args: { p_user_id: string; p_end: string }) {
+    async rpc(_name: string, args: { p_user_id: string; p_end: string; p_request_key?: string }) {
       if (options.claimFailure && args.p_user_id === "A")
         return { data: null, error: { message: "offline" } };
-      const id = args.p_user_id;
+      const id = args.p_request_key ? args.p_user_id + ":" + args.p_request_key : args.p_user_id;
       if (reports.has(id)) return { data: null, error: null };
-      reports.set(id, { user_id: id, period_end: args.p_end, delivery_status: "claimed" });
+      reports.set(id, {
+        user_id: args.p_user_id,
+        request_key: args.p_request_key,
+        delivery_kind: args.p_request_key ? "manual" : "scheduled",
+        period_end: args.p_end,
+        delivery_status: "claimed",
+      });
       return { data: id, error: null };
     },
   } as unknown as SupabaseClient<Database>;
@@ -110,6 +130,7 @@ function fixture(
         counts: { changes_count: 0, vehicles_count: 0, tests_count: 0 },
         message: "aggregate only",
         events: [],
+        vehicles: {},
       };
     },
     async storedToken() {
@@ -125,7 +146,13 @@ function fixture(
     },
   };
   const run = () => processReports(admin, actions, new Date("2026-11-08T19:00:00Z"));
-  return { run, reports, sends: () => sends };
+  return {
+    run,
+    reports,
+    sends: () => sends,
+    manual: (key: string) =>
+      sendManualReport(admin, actions, "A", key, new Date("2026-11-08T17:00:00Z")),
+  };
 }
 
 describe("Telegram report delivery", () => {
@@ -178,4 +205,16 @@ describe("Telegram report delivery", () => {
     strictEqual(f.sends(), 2);
     strictEqual(f.reports.get("A")?.delivery_status, "ambiguous");
   });
+});
+
+it("manual reporting works while the automatic schedule is paused and repeated requests do not resend", async () => {
+  const f = fixture({ paused: true });
+  await Promise.all([f.manual("same-key"), f.manual("same-key")]);
+  strictEqual(f.sends(), 1);
+});
+it("manual reports do not move the automatic delivery cursor", async () => {
+  const f = fixture();
+  await f.manual("manual-key");
+  await f.run();
+  strictEqual(f.sends(), 3);
 });

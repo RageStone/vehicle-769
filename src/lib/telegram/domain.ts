@@ -18,29 +18,50 @@ export function shiftDay(day: string, delta: number) {
   d.setUTCDate(d.getUTCDate() + delta);
   return d.toISOString().slice(0, 10);
 }
-export function atIsrael20(day: string) {
-  const target = Date.parse(`${day}T20:00:00Z`);
-  let candidate = new Date(target);
-  for (let i = 0; i < 3; i++) {
-    const p = new Intl.DateTimeFormat("sv-SE", {
-      timeZone: ZONE,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hourCycle: "h23",
-    }).format(candidate);
-    const localAsUTC = Date.parse(p.replace(" ", "T") + "Z");
-    candidate = new Date(candidate.getTime() + target - localAsUTC);
-  }
-  return candidate.toISOString();
+export function atIsraelHour(day: string, hour = 20) {
+  const target = Date.parse(day + "T" + String(hour).padStart(2, "0") + ":00:00Z");
+  const formatter = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  });
+  const wall = (utc: number) => Date.parse(formatter.format(new Date(utc)).replace(" ", "T") + "Z");
+  const offsets = new Set(
+    [-36, -12, 0, 12, 36].map((h) => {
+      const t = target + h * 3600000;
+      return wall(t) - t;
+    }),
+  );
+  const candidates = [...offsets].map((offset) => target - offset).sort((a, b) => a - b);
+  // Choose the first occurrence of a repeated hour. A skipped spring hour runs
+  // at the first corresponding later wall time, once for that local day.
+  const exact = candidates.find((t) => wall(t) === target);
+  const chosen =
+    exact ??
+    candidates.filter((t) => wall(t) > target).sort((a, b) => wall(a) - wall(b) || a - b)[0];
+  if (chosen === undefined) throw new Error("Unable to resolve Israel report time");
+  return new Date(chosen).toISOString();
 }
-export function reportPeriod(now: Date, next = false) {
-  const local = localParts(now);
-  const day = shiftDay(local.day, next ? (local.hour >= 20 ? 1 : 0) : local.hour < 20 ? -1 : 0);
-  return { start: atIsrael20(shiftDay(day, -1)), end: atIsrael20(day) };
+export const atIsrael20 = (day: string) => atIsraelHour(day, 20);
+export function reportPeriod(now: Date, next = false, hour = 20) {
+  const local = localParts(now),
+    boundary = atIsraelHour(local.day, hour);
+  const after = now.getTime() >= Date.parse(boundary);
+  const day = shiftDay(local.day, next ? (after ? 1 : 0) : after ? 0 : -1);
+  return { start: atIsraelHour(shiftDay(day, -1), hour), end: atIsraelHour(day, hour) };
+}
+export function manualPeriod(now: Date, hour = 20) {
+  const current = reportPeriod(now, true, hour);
+  return {
+    start:
+      current.start === now.toISOString() ? reportPeriod(now, false, hour).start : current.start,
+    end: now.toISOString(),
+  };
 }
 export interface AuditEvent {
   id: string;
@@ -84,10 +105,21 @@ export function reportDate(iso: string) {
   const { day } = localParts(new Date(iso));
   return day.split("-").reverse().join("/");
 }
-export function nextDuePeriod(enabledAt: string, previousEnd: string | undefined, now: Date) {
-  const cursor = previousEnd && previousEnd > enabledAt ? previousEnd : enabledAt;
-  const period = reportPeriod(new Date(cursor), true);
-  return period.end <= reportPeriod(now).end ? period : null;
+export function nextDuePeriod(
+  enabledAt: string,
+  previousEnd: string | undefined,
+  now: Date,
+  hour = 20,
+  scheduleChangedAt?: string | null,
+) {
+  const cursor = [enabledAt, previousEnd, scheduleChangedAt]
+    .filter((x): x is string => !!x)
+    .sort()
+    .at(-1)!;
+  const period = reportPeriod(new Date(cursor), true, hour);
+  return period.end <= reportPeriod(now, false, hour).end
+    ? { ...period, start: previousEnd && previousEnd > enabledAt ? previousEnd : period.start }
+    : null;
 }
 export function reportMessage(
   period: { start: string; end: string },

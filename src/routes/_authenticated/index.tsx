@@ -1,10 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,17 +21,39 @@ import { InspectionDialog } from "@/components/inspection-dialog";
 import { VehicleFormDialog } from "@/components/vehicle-form-dialog";
 import { VehicleDetailsDialog } from "@/components/vehicle-details-dialog";
 import { toCSV } from "@/lib/parse-import";
-import { Plus, Search, Upload, Download, CheckCheck, Trash2, Pencil, Truck, ListChecks, X, Calendar } from "lucide-react";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+  Plus,
+  Search,
+  Upload,
+  Download,
+  CheckCheck,
+  Trash2,
+  Pencil,
+  Truck,
+  ListChecks,
+  X,
+  Calendar,
+} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { SignOutButton } from "@/components/sign-out-button";
 import { ChangeReportDialog } from "@/components/change-report-dialog";
 import { TelegramSettingsButton } from "@/components/telegram-settings-dialog";
 
-const OVERDUE_DAYS = 7;
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getUserPreferences, saveUserPreferences } from "@/lib/preferences.functions";
+import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -44,10 +70,43 @@ export const Route = createFileRoute("/_authenticated/")({
 });
 
 type SortKey = "category" | "vehicle_number" | "last_date";
-type StatFilter = null | { kind: "checkedOn"; date: string } | { kind: "overdue"; days: number } | { kind: "never" };
+type StatFilter =
+  null | { kind: "checkedOn"; date: string } | { kind: "overdue" } | { kind: "never" };
 
 function Dashboard() {
   const { data: vehicles = [], isLoading } = useVehicles();
+  const { userId } = Route.useRouteContext();
+  const readPreferences = useServerFn(getUserPreferences),
+    savePreferences = useServerFn(saveUserPreferences),
+    qc = useQueryClient();
+  const preferences = useQuery({
+    queryKey: ["preferences", userId],
+    queryFn: () => readPreferences(),
+  });
+  const overdueDays = preferences.data?.overdueDays ?? 7;
+  const [overdueDraft, setOverdueDraft] = useState("7"),
+    [savingPeriod, setSavingPeriod] = useState(false);
+  useEffect(() => {
+    if (preferences.data) setOverdueDraft(String(preferences.data.overdueDays));
+  }, [preferences.data]);
+  const savePeriod = async () => {
+    const days = Number(overdueDraft);
+    if (!overdueDraft.trim() || !Number.isInteger(days) || days < 0 || days > 365) {
+      toast.error("יש להזין מספר ימים שלם בין 0 ל-365");
+      return;
+    }
+    setSavingPeriod(true);
+    try {
+      const result = await savePreferences({ data: { overdueDays: days } });
+      qc.setQueryData(["preferences", userId], result);
+      setStatFilter({ kind: "overdue" });
+      toast.success("תקופת הבדיקות נשמרה לחשבון שלך");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "שמירת התקופה נכשלה");
+    } finally {
+      setSavingPeriod(false);
+    }
+  };
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState<SortKey>("category");
@@ -78,16 +137,21 @@ function Dashboard() {
   const today = todayISO();
 
   const stats = useMemo(() => {
-    let checkedToday = 0, never = 0, overdue = 0;
+    let checkedToday = 0,
+      never = 0,
+      overdue = 0;
     for (const v of vehicles) {
       const last = v.last_inspection;
-      if (!last) { never++; continue; }
+      if (!last) {
+        never++;
+        continue;
+      }
       if (last.inspection_date === today) checkedToday++;
       const d = daysSince(last.inspection_date);
-      if (d !== null && d > OVERDUE_DAYS) overdue++;
+      if (d !== null && d > overdueDays) overdue++;
     }
     return { total: vehicles.length, checkedToday, never, overdue };
-  }, [vehicles, today]);
+  }, [vehicles, today, overdueDays]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -100,7 +164,7 @@ function Dashboard() {
         } else if (statFilter.kind === "overdue") {
           if (!last) return false;
           const d = daysSince(last.inspection_date);
-          if (d === null || d <= statFilter.days) return false;
+          if (d === null || d <= overdueDays) return false;
         } else if (statFilter.kind === "never") {
           if (last) return false;
         }
@@ -128,16 +192,20 @@ function Dashboard() {
       );
     });
     list = [...list].sort((a, b) => {
-      if (sortBy === "vehicle_number") return a.vehicle_number.localeCompare(b.vehicle_number, undefined, { numeric: true });
+      if (sortBy === "vehicle_number")
+        return a.vehicle_number.localeCompare(b.vehicle_number, undefined, { numeric: true });
       if (sortBy === "last_date") {
         const ad = a.last_inspection?.inspection_date ?? "";
         const bd = b.last_inspection?.inspection_date ?? "";
         return bd.localeCompare(ad);
       }
-      return a.category.localeCompare(b.category, "he") || a.vehicle_number.localeCompare(b.vehicle_number, undefined, { numeric: true });
+      return (
+        a.category.localeCompare(b.category, "he") ||
+        a.vehicle_number.localeCompare(b.vehicle_number, undefined, { numeric: true })
+      );
     });
     return list;
-  }, [vehicles, search, category, sortBy, statFilter, dateFrom, dateTo, lastStatus]);
+  }, [vehicles, search, category, sortBy, statFilter, dateFrom, dateTo, lastStatus, overdueDays]);
 
   const toggleAll = (checked: boolean) => {
     setSelected(checked ? new Set(filtered.map((v) => v.id)) : new Set());
@@ -145,7 +213,8 @@ function Dashboard() {
   const toggleOne = (id: string, checked: boolean) => {
     setSelected((prev) => {
       const n = new Set(prev);
-      if (checked) n.add(id); else n.delete(id);
+      if (checked) n.add(id);
+      else n.delete(id);
       return n;
     });
   };
@@ -158,11 +227,14 @@ function Dashboard() {
       "תאריך בדיקה אחרון": v.last_inspection ? formatDate(v.last_inspection.inspection_date) : "",
       "סטטוס אחרון": v.last_inspection?.status ?? "",
     }));
-    const csv = "\uFEFF" + toCSV(rows, ["קטגוריה", "מספר רכב", "הערות", "תאריך בדיקה אחרון", "סטטוס אחרון"]);
+    const csv =
+      "\uFEFF" + toCSV(rows, ["קטגוריה", "מספר רכב", "הערות", "תאריך בדיקה אחרון", "סטטוס אחרון"]);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `vehicles-${today}.csv`; a.click();
+    a.href = url;
+    a.download = `vehicles-${today}.csv`;
+    a.click();
     URL.revokeObjectURL(url);
   };
 
@@ -171,7 +243,9 @@ function Dashboard() {
       await bulkMark.mutateAsync({ vehicleIds: Array.from(selected), status: "ok", date: today });
       toast.success(`סומנו ${selected.size} רכבים כתקינים`);
       setSelected(new Set());
-    } catch { toast.error("שגיאה"); }
+    } catch {
+      toast.error("שגיאה");
+    }
   };
 
   const deleteSelected = async () => {
@@ -180,7 +254,9 @@ function Dashboard() {
       await bulkDelete.mutateAsync(ids);
       toast.success(`נמחקו ${ids.length} רכבים`);
       setSelected(new Set());
-    } catch { toast.error("שגיאה במחיקה"); }
+    } catch {
+      toast.error("שגיאה במחיקה");
+    }
   };
 
   return (
@@ -193,7 +269,9 @@ function Dashboard() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link to="/import"><Upload className="size-4 ms-1" /> ייבוא</Link>
+              <Link to="/import">
+                <Upload className="size-4 ms-1" /> ייבוא
+              </Link>
             </Button>
             <Button size="sm" onClick={() => setAddOpen(true)}>
               <Plus className="size-4 ms-1" /> הוסף רכב
@@ -227,11 +305,11 @@ function Dashboard() {
             onClick={() => setStatFilter({ kind: "never" })}
           />
           <StatCard
-            label={`באיחור (>${OVERDUE_DAYS} ימים)`}
+            label={`באיחור (>${overdueDays} ימים)`}
             value={stats.overdue}
             tone="bad"
             active={statFilter?.kind === "overdue"}
-            onClick={() => setStatFilter({ kind: "overdue", days: OVERDUE_DAYS })}
+            onClick={() => setStatFilter({ kind: "overdue" })}
           />
         </div>
 
@@ -250,18 +328,47 @@ function Dashboard() {
             )}
             {statFilter.kind === "overdue" && (
               <>
-                <span className="font-medium">סינון: באיחור של יותר מ-</span>
+                <Label htmlFor="overdue-days">באיחור של יותר מ-</Label>
                 <Input
+                  id="overdue-days"
                   type="number"
+                  inputMode="numeric"
                   min={0}
-                  value={statFilter.days}
-                  onChange={(e) => setStatFilter({ kind: "overdue", days: Math.max(0, Number(e.target.value) || 0) })}
-                  className="h-8 w-20"
+                  max={365}
+                  step={1}
+                  value={overdueDraft}
+                  onChange={(e) => setOverdueDraft(e.target.value)}
+                  disabled={preferences.isPending || preferences.isError || savingPeriod}
+                  className="h-11 w-24"
                 />
                 <span>ימים</span>
+                <Button
+                  onClick={savePeriod}
+                  disabled={
+                    preferences.isPending ||
+                    preferences.isError ||
+                    savingPeriod ||
+                    overdueDraft === String(overdueDays)
+                  }
+                >
+                  {savingPeriod ? "שומר…" : "שמור תקופה"}
+                </Button>
+                <span className="w-full text-xs text-muted-foreground">
+                  התקופה נשמרת בחשבון שלך לכל המכשירים.
+                </span>
+                {preferences.isError && (
+                  <p role="alert">
+                    טעינת ההגדרות נכשלה.{" "}
+                    <button className="underline" onClick={() => preferences.refetch()}>
+                      נסה שוב
+                    </button>
+                  </p>
+                )}
               </>
             )}
-            {statFilter.kind === "never" && <span className="font-medium">סינון: לא נבדקו מעולם</span>}
+            {statFilter.kind === "never" && (
+              <span className="font-medium">סינון: לא נבדקו מעולם</span>
+            )}
             <Button size="sm" variant="ghost" onClick={() => setStatFilter(null)}>
               <X className="size-4 ms-1" /> נקה סינון
             </Button>
@@ -280,14 +387,22 @@ function Dashboard() {
               />
             </div>
             <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="sm:w-48"><SelectValue placeholder="קטגוריה" /></SelectTrigger>
+              <SelectTrigger className="sm:w-48">
+                <SelectValue placeholder="קטגוריה" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">כל הקטגוריות</SelectItem>
-                {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                {categories.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
-              <SelectTrigger className="sm:w-44"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="sm:w-44">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="category">מיון: קטגוריה</SelectItem>
                 <SelectItem value="vehicle_number">מיון: מס׳ רכב</SelectItem>
@@ -295,7 +410,9 @@ function Dashboard() {
               </SelectContent>
             </Select>
             <Select value={lastStatus} onValueChange={setLastStatus}>
-              <SelectTrigger className="sm:w-48"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="sm:w-48">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">כל הסטטוסים</SelectItem>
                 <SelectItem value="ok">תקין</SelectItem>
@@ -333,7 +450,15 @@ function Dashboard() {
                 onChange={(e) => setDateTo(e.target.value)}
                 className="h-8 w-auto"
               />
-              <Button size="sm" variant="ghost" onClick={() => { setDateFrom(""); setDateTo(""); setShowDateRange(false); }}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setDateFrom("");
+                  setDateTo("");
+                  setShowDateRange(false);
+                }}
+              >
                 <X className="size-4 ms-1" /> נקה טווח
               </Button>
             </div>
@@ -364,7 +489,9 @@ function Dashboard() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-              <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>נקה</Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
+                נקה
+              </Button>
             </div>
           )}
         </div>
@@ -372,14 +499,18 @@ function Dashboard() {
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <div>{filtered.length} רכבים</div>
           <div className="flex flex-wrap gap-1">
-          <Button size="sm" variant="ghost" onClick={exportCSV}>
-            <Download className="size-4 ms-1" /> ייצוא CSV
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => setReportOpen(true)}>
-            <Download className="size-4 ms-1" /> דוח שינויים
-          </Button>
+            <Button size="sm" variant="ghost" onClick={exportCSV}>
+              <Download className="size-4 ms-1" /> ייצוא CSV
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setReportOpen(true)}>
+              <Download className="size-4 ms-1" /> דוח שינויים
+            </Button>
           </div>
-          <ChangeReportDialog open={reportOpen} onOpenChange={setReportOpen} categories={categories} />
+          <ChangeReportDialog
+            open={reportOpen}
+            onOpenChange={setReportOpen}
+            categories={categories}
+          />
         </div>
 
         {isLoading ? (
@@ -392,6 +523,7 @@ function Dashboard() {
             <div className="grid gap-2 md:hidden">
               {filtered.map((v) => (
                 <VehicleCard
+                  overdueDays={overdueDays}
                   key={v.id}
                   v={v}
                   selected={selected.has(v.id)}
@@ -438,10 +570,12 @@ function Dashboard() {
                         </button>
                       </td>
                       <td className="p-2 text-muted-foreground">{v.notes || "—"}</td>
-                      <td className="p-2">{v.last_inspection ? formatDate(v.last_inspection.inspection_date) : "—"}</td>
+                      <td className="p-2">
+                        {v.last_inspection ? formatDate(v.last_inspection.inspection_date) : "—"}
+                      </td>
                       <td className="p-2">
                         <div className="flex flex-col items-start gap-1">
-                          <StatusBadge status={effectiveStatus(v.last_inspection)} />
+                          <StatusBadge status={effectiveStatus(v.last_inspection, overdueDays)} />
                           <CheckMarks inspection={v.last_inspection} />
                         </div>
                       </td>
@@ -472,42 +606,75 @@ function Dashboard() {
       <VehicleFormDialog
         vehicle={editVehicle}
         open={!!editVehicle || addOpen}
-        onOpenChange={(o) => { if (!o) { setEditVehicle(null); setAddOpen(false); } }}
+        onOpenChange={(o) => {
+          if (!o) {
+            setEditVehicle(null);
+            setAddOpen(false);
+          }
+        }}
       />
       <VehicleDetailsDialog
         vehicle={detailsVehicle}
         open={!!detailsVehicle}
         onOpenChange={(o) => !o && setDetailsVehicle(null)}
-        onNewInspection={(v) => { setDetailsVehicle(null); setInspectionFor(v); }}
-        onEdit={(v) => { setDetailsVehicle(null); setEditVehicle(v); }}
+        onNewInspection={(v) => {
+          setDetailsVehicle(null);
+          setInspectionFor(v);
+        }}
+        onEdit={(v) => {
+          setDetailsVehicle(null);
+          setEditVehicle(v);
+        }}
       />
     </div>
   );
 }
 
-function StatCard({ label, value, tone, active, onClick }: { label: string; value: number; tone?: "ok" | "bad" | "muted"; active?: boolean; onClick?: () => void }) {
+function StatCard({
+  label,
+  value,
+  tone,
+  active,
+  onClick,
+}: {
+  label: string;
+  value: number;
+  tone?: "ok" | "bad" | "muted";
+  active?: boolean;
+  onClick?: () => void;
+}) {
   const color =
-    tone === "ok" ? "text-[color:var(--status-ok)]"
-      : tone === "bad" ? "text-[color:var(--status-bad)]"
-      : tone === "muted" ? "text-muted-foreground"
-      : "text-foreground";
+    tone === "ok"
+      ? "text-[color:var(--status-ok)]"
+      : tone === "bad"
+        ? "text-[color:var(--status-bad)]"
+        : tone === "muted"
+          ? "text-muted-foreground"
+          : "text-foreground";
   return (
-    <Card
+    <button
+      type="button"
+      aria-pressed={!!active}
       onClick={onClick}
-      className={`cursor-pointer transition hover:bg-muted/40 ${active ? "ring-2 ring-[color:var(--brand)]" : ""}`}
+      className={`min-w-0 touch-manipulation rounded-xl border bg-card p-3 text-start text-card-foreground transition hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${active ? "ring-2 ring-[color:var(--brand)]" : ""}`}
     >
-      <CardContent className="p-3">
-        <div className="text-xs text-muted-foreground">{label}</div>
-        <div className={`mt-1 text-2xl font-bold ${color}`}>{value}</div>
-      </CardContent>
-    </Card>
+      <span className="block text-xs text-muted-foreground">{label}</span>
+      <span className={`mt-1 block text-2xl font-bold ${color}`}>{value}</span>
+    </button>
   );
 }
 
 function VehicleCard({
-  v, selected, onToggle, onOpen, onInspect, onEdit,
+  v,
+  selected,
+  onToggle,
+  onOpen,
+  onInspect,
+  onEdit,
+  overdueDays,
 }: {
   v: VehicleWithLast;
+  overdueDays: number;
   selected: boolean;
   onToggle: (c: boolean) => void;
   onOpen: () => void;
@@ -519,14 +686,18 @@ function VehicleCard({
       <CardContent className="space-y-2 p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 items-start gap-2">
-            <Checkbox checked={selected} onCheckedChange={(c) => onToggle(!!c)} className="mt-1 shrink-0" />
+            <Checkbox
+              checked={selected}
+              onCheckedChange={(c) => onToggle(!!c)}
+              className="mt-1 shrink-0"
+            />
             <button onClick={onOpen} className="text-right">
               <div className="font-bold">{v.vehicle_number}</div>
               <div className="text-xs text-muted-foreground">{v.category}</div>
             </button>
           </div>
           <div className="flex flex-col items-end gap-1">
-            <StatusBadge status={effectiveStatus(v.last_inspection)} />
+            <StatusBadge status={effectiveStatus(v.last_inspection, overdueDays)} />
             <CheckMarks inspection={v.last_inspection} />
           </div>
         </div>
@@ -539,8 +710,12 @@ function VehicleCard({
           בדיקה אחרונה: {v.last_inspection ? formatDate(v.last_inspection.inspection_date) : "—"}
         </div>
         <div className="flex gap-2 pt-1">
-          <Button size="sm" className="flex-1" onClick={onInspect}>בדיקה חדשה</Button>
-          <Button size="sm" variant="outline" onClick={onEdit}>עריכה</Button>
+          <Button size="sm" className="flex-1" onClick={onInspect}>
+            בדיקה חדשה
+          </Button>
+          <Button size="sm" variant="outline" onClick={onEdit}>
+            עריכה
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -554,9 +729,13 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
       <h3 className="mt-3 font-medium">אין רכבים עדיין</h3>
       <p className="mt-1 text-sm text-muted-foreground">הוסף רכב חדש או ייבא רשימה.</p>
       <div className="mt-4 flex justify-center gap-2">
-        <Button onClick={onAdd}><Plus className="size-4 ms-1" /> הוסף רכב</Button>
+        <Button onClick={onAdd}>
+          <Plus className="size-4 ms-1" /> הוסף רכב
+        </Button>
         <Button asChild variant="outline">
-          <Link to="/import"><Upload className="size-4 ms-1" /> ייבוא</Link>
+          <Link to="/import">
+            <Upload className="size-4 ms-1" /> ייבוא
+          </Link>
         </Button>
       </div>
     </div>
