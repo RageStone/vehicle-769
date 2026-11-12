@@ -1,6 +1,6 @@
 # Telegram alerts
 
-Each user connects their own bot and numeric chat ID in the Telegram settings dialog. Saved bot tokens are AES-GCM encrypted and available only to server code. Reports contain aggregate counts and a link; vehicle details stay behind authentication.
+Each user connects their own bot and numeric chat ID in the Telegram settings dialog. Saved bot tokens are AES-GCM encrypted and available only to server code. Reports include authorized vehicle numbers, names/categories/notes, and before/after inspection changes, as requested on 12 November 2026.
 
 ## Local verification
 
@@ -47,6 +47,10 @@ Local tests cannot prove production migrations, RLS policies, secrets, scheduler
 
 Each connected user can save a whole report hour (00:00–23:00, Asia/Jerusalem). The shared hourly job checks each user independently. Changing the hour applies going forward, including daylight-saving changes. Manual delivery sends the current period up to now with a separate idempotency key and history label; it does not advance the automatic reporting cursor and also works while automatic reports are paused.
 
-The website report details show actual vehicle number and category/name/notes. New inspection audits preserve the preceding inspection snapshot; legacy insert audits use available earlier inspections from the same account. If no earlier inspection is available, the UI says so. Telegram messages remain aggregate-only.
+The website report details show actual vehicle number and category/name/notes. New inspection audits preserve the preceding inspection snapshot; legacy insert audits use available earlier inspections from the same account. If no earlier inspection is available, the UI says so. Telegram messages now include the authorized vehicle identities and before/after changes.
 
 The overdue card is an accessible touch button. The account can save an overdue threshold from 0 to 365 calendar days; dashboard counts, filter results, and expired badges use the same saved value on desktop and mobile.
+
+## Detailed Telegram delivery
+
+Manual and scheduled reports include the same authorized vehicle identity and before/after fields shown in the website report. Long reports are divided into numbered messages under Telegram's text limit. The database records message IDs and completed parts; a partial or uncertain send is never retried automatically. Internal account IDs and bot credentials are never included.

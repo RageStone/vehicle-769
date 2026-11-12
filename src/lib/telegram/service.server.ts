@@ -10,9 +10,11 @@ import {
   reportPeriod,
   summarize,
   TEST_MESSAGE,
+  APP_URL,
   manualPeriod,
 } from "./domain";
 import { previousInspection, reportVehicle, snapshot } from "./report-details";
+import { detailedReportMessage, splitTelegramReport } from "./message";
 export async function storedToken(userId: string) {
   const { data, error } = await supabaseAdmin
     .from("telegram_credentials")
@@ -77,7 +79,7 @@ export async function generateReport(
   const allowed = eligibleEvents(events, userId, owners, period.start, period.end);
   const counts = summarize(allowed);
   const inspectionHistory: Database["public"]["Tables"]["inspections"]["Row"][] = [];
-  if (details) {
+  {
     const legacyIds = [
       ...new Set(
         allowed
@@ -100,42 +102,48 @@ export async function generateReport(
         if (result.data.length < 500) break;
       }
   }
-  const detailedEvents = details
-    ? allowed.map((event) => {
-        if (!vehicleLabels[event.vehicle_id]) {
-          const identity =
-            event.vehicle_snapshot ??
-            (event.event_type.startsWith("vehicle_")
-              ? (event.after_values ?? event.before_values)
-              : null);
-          const label = reportVehicle(identity);
-          if (label.number) vehicleLabels[event.vehicle_id] = label;
-        }
-        const before =
-          event.event_type === "inspection_insert" && !event.before_values
-            ? previousInspection(
-                inspectionHistory,
-                event.vehicle_id,
-                userId,
-                event.occurred_at,
-                snapshot(event.after_values)?.id,
-              )
-            : event.before_values;
-        return {
-          ...event,
-          before_values: before,
-          changed_fields:
-            event.event_type === "inspection_insert"
-              ? ["status", "fit_ok", "radio_ok", "shov_ok", "winter_ok", "inspection_date", "notes"]
-              : event.changed_fields,
-        };
-      })
-    : [];
+  const detailedEvents = allowed.map((event) => {
+    if (!vehicleLabels[event.vehicle_id]) {
+      const identity =
+        event.vehicle_snapshot ??
+        (event.event_type.startsWith("vehicle_")
+          ? (event.after_values ?? event.before_values)
+          : null);
+      const label = reportVehicle(identity);
+      if (label.number) vehicleLabels[event.vehicle_id] = label;
+    }
+    const before =
+      event.event_type === "inspection_insert" && !event.before_values
+        ? previousInspection(
+            inspectionHistory,
+            event.vehicle_id,
+            userId,
+            event.occurred_at,
+            snapshot(event.after_values)?.id,
+          )
+        : event.before_values;
+    return {
+      ...event,
+      before_values: before,
+      changed_fields:
+        event.event_type === "inspection_insert"
+          ? ["status", "fit_ok", "radio_ok", "shov_ok", "winter_ok", "inspection_date", "notes"]
+          : event.changed_fields,
+    };
+  });
+  const appUrl = process.env.APP_URL || APP_URL;
+  const message = detailedReportMessage(
+    reportMessage(period, counts, appUrl),
+    detailedEvents,
+    vehicleLabels,
+    appUrl,
+  );
   return {
     period,
     counts,
-    message: reportMessage(period, counts, process.env.APP_URL),
-    events: detailedEvents,
+    message,
+    messages: splitTelegramReport(message),
+    events: details ? detailedEvents : [],
     vehicles: details ? vehicleLabels : {},
   };
 }
@@ -234,8 +242,12 @@ export async function deliverClaimedReport(
   requireEnabled = true,
 ) {
   let sending = false;
+  const deliveredIds: number[] = [];
+  let totalParts = 1;
   try {
     const report = await actions.generateReport(admin, config.user_id, period);
+    const messages = report.messages;
+    totalParts = messages.length;
     const token = await actions.storedToken(config.user_id);
     await actions.verifyDestination(token, config.telegram_chat_id);
     // Re-read configuration immediately before sending: pause, disconnect and rotation cancel stale work.
@@ -256,7 +268,13 @@ export async function deliverClaimedReport(
     }
     const { data: started, error: writeError } = await admin
       .from("telegram_reports")
-      .update({ ...report.counts, delivery_status: "sending", send_attempts: 1 })
+      .update({
+        ...report.counts,
+        delivery_status: "sending",
+        send_attempts: 1,
+        message_parts: totalParts,
+        sent_parts: 0,
+      })
       .eq("id", id)
       .eq("delivery_status", "claimed")
       .select("id")
@@ -264,13 +282,40 @@ export async function deliverClaimedReport(
     if (writeError) throw new Error("שמירת ניסיון השליחה נכשלה");
     if (!started) return;
     sending = true;
-    const result = await actions.sendMessage(token, config.telegram_chat_id, report.message);
+    for (const text of messages) {
+      if (deliveredIds.length) {
+        const latest = await admin
+          .from("telegram_settings")
+          .select("enabled,updated_at,connection_verified")
+          .eq("user_id", config.user_id)
+          .single();
+        if (
+          latest.error ||
+          !latest.data ||
+          (requireEnabled && !latest.data.enabled) ||
+          latest.data.connection_verified === false ||
+          latest.data.updated_at !== config.updated_at
+        )
+          throw new Error("Report configuration changed during delivery");
+      }
+      const result = await actions.sendMessage(token, config.telegram_chat_id, text);
+      deliveredIds.push(result.message_id);
+      const progress = await admin
+        .from("telegram_reports")
+        .update({
+          telegram_message_id: deliveredIds[0],
+          telegram_message_ids: [...deliveredIds],
+          sent_parts: deliveredIds.length,
+        })
+        .eq("id", id);
+      if (progress.error) throw new Error("Delivery progress could not be saved");
+    }
     const sentAt = new Date().toISOString();
     const { error: resultError } = await admin
       .from("telegram_reports")
       .update({
         delivery_status: "sent",
-        telegram_message_id: result.message_id,
+        telegram_message_id: deliveredIds[0],
         sent_at: sentAt,
       })
       .eq("id", id);
@@ -280,13 +325,18 @@ export async function deliverClaimedReport(
       .update({ last_success_at: sentAt, last_error: null })
       .eq("user_id", config.user_id);
   } catch (error) {
-    const ambiguous = error instanceof TelegramFailure ? error.ambiguous : sending;
-    const message =
+    const ambiguous =
+      deliveredIds.length > 0 || (error instanceof TelegramFailure ? error.ambiguous : sending);
+    const failureMessage =
       error instanceof TelegramFailure
         ? error.message
         : ambiguous
           ? "תוצאת השליחה אינה ידועה; לא תבוצע שליחה חוזרת"
           : "יצירת הדוח נכשלה";
+    const message =
+      deliveredIds.length > 0
+        ? `נשלחו ${deliveredIds.length} מתוך ${totalParts} חלקים; אין שליחה חוזרת אוטומטית. ${failureMessage}`
+        : failureMessage;
     const { error: failureError } = await admin
       .from("telegram_reports")
       .update({ delivery_status: ambiguous ? "ambiguous" : "failed", last_error: message })

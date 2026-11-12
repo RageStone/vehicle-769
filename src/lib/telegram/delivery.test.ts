@@ -14,6 +14,9 @@ function fixture(
     settingsFailure?: boolean;
     ambiguous?: boolean;
     resultFailure?: boolean;
+    multipartFailure?: boolean;
+    multipleParts?: boolean;
+    rotateAfterFirstPart?: boolean;
   } = {},
 ) {
   const configs = ["A", "B"].map((user_id) => ({
@@ -66,7 +69,11 @@ function fixture(
                   return columns === "*"
                     ? { data: configs.find((c) => c.user_id === filters.user_id), error: null }
                     : {
-                        data: { enabled: !options.paused, updated_at: "version-1" },
+                        data: {
+                          enabled: !options.paused,
+                          updated_at:
+                            options.rotateAfterFirstPart && sends > 0 ? "version-2" : "version-1",
+                        },
                         error: options.settingsFailure ? { message: "offline" } : null,
                       };
                 return { data: configs, error: null };
@@ -128,7 +135,8 @@ function fixture(
       return {
         period,
         counts: { changes_count: 0, vehicles_count: 0, tests_count: 0 },
-        message: "aggregate only",
+        message: "report",
+        messages: options.multipleParts ? ["part one", "part two"] : ["report"],
         events: [],
         vehicles: {},
       };
@@ -141,6 +149,7 @@ function fixture(
     },
     async sendMessage() {
       sends++;
+      if (options.multipartFailure && sends === 2) throw new TelegramFailure(429, false);
       if (options.ambiguous) throw new TelegramFailure(0, true);
       return { message_id: 1 };
     },
@@ -217,4 +226,28 @@ it("manual reports do not move the automatic delivery cursor", async () => {
   await f.manual("manual-key");
   await f.run();
   strictEqual(f.sends(), 3);
+});
+
+it("multipart delivery stores all successful parts", async () => {
+  const f = fixture({ paused: true, multipleParts: true });
+  await f.manual("parts");
+  strictEqual(f.sends(), 2);
+  strictEqual(f.reports.get("A:parts")?.sent_parts, 2);
+  strictEqual(f.reports.get("A:parts")?.delivery_status, "sent");
+});
+it("a failure after one part never blindly resends a partially delivered report", async () => {
+  const f = fixture({ paused: true, multipleParts: true, multipartFailure: true });
+  await f.manual("parts");
+  await f.manual("parts");
+  strictEqual(f.sends(), 2);
+  strictEqual(f.reports.get("A:parts")?.sent_parts, 1);
+  strictEqual(f.reports.get("A:parts")?.delivery_status, "ambiguous");
+});
+
+it("changing the bot configuration stops the remaining report parts", async () => {
+  const f = fixture({ paused: true, multipleParts: true, rotateAfterFirstPart: true });
+  await f.manual("parts");
+  strictEqual(f.sends(), 1);
+  strictEqual(f.reports.get("A:parts")?.sent_parts, 1);
+  strictEqual(f.reports.get("A:parts")?.delivery_status, "ambiguous");
 });

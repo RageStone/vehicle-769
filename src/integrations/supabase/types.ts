@@ -134,6 +134,9 @@ export type Database = {
       }
       telegram_reports: {
         Row: {
+          sent_parts: number
+          message_parts: number
+          telegram_message_ids: number[]
           request_key: string | null
           delivery_kind: string
           changes_count: number
@@ -151,6 +154,9 @@ export type Database = {
           vehicles_count: number
         }
         Insert: {
+          sent_parts?: number
+          message_parts?: number
+          telegram_message_ids?: number[]
           request_key?: string | null
           delivery_kind?: string
           changes_count?: number
@@ -168,6 +174,9 @@ export type Database = {
           vehicles_count?: number
         }
         Update: {
+          sent_parts?: number
+          message_parts?: number
+          telegram_message_ids?: number[]
           request_key?: string | null
           delivery_kind?: string
           changes_count?: number

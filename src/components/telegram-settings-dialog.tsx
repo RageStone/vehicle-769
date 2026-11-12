@@ -42,7 +42,7 @@ const T = {
   manual: "שלח דוח יומי עכשיו",
   confirmManual: "לשלוח עכשיו את הדוח היומי?",
   manualHint:
-    "סיכום הפעילות בתקופה הנוכחית עד עכשיו יישלח ליעד השמור. הדיווח האוטומטי ימשיך כרגיל.",
+    "דוח מפורט לתקופה הנוכחית, עם מספרי ושמות הרכבים ושינויים לפני ואחרי, יישלח ליעד השמור. הדיווח האוטומטי ימשיך כרגיל.",
   manualSent: "הדוח היומי נשלח",
   hour: "שעת הדיווח שלי (שעון ישראל)",
   saveHour: "שמור שעה",
@@ -53,7 +53,7 @@ const T = {
   chat: "מזהה צ׳אט / ערוץ",
   instructions:
     "צור בוט דרך BotFather והעתק לכאן את הטוקן. בצ׳אט פרטי יש ללחוץ Start אצל הבוט. בערוץ או בקבוצה יש להוסיף אותו עם הרשאת פרסום.",
-  sensitive: "לטלגרם יישלחו סיכומים מספריים וקישור לאתר בלבד; פירוט הרכבים נשאר באתר.",
+  sensitive: "לטלגרם יישלחו מספרי ושמות הרכבים ופרטי השינויים לפני ואחרי, ליעד שבחרת.",
   verify: "בדיקת חיבור",
   save: "שמור הגדרות",
   test: "שלח הודעת ניסיון",
@@ -538,6 +538,11 @@ function TelegramSettingsDialog({
                     {report.changes_count} {T.updates} · {report.vehicles_count} {T.vehicles} ·{" "}
                     {report.tests_count} {T.tests}
                   </p>
+                  {report.message_parts > 1 && (
+                    <p className="text-muted-foreground">
+                      נשלחו {report.sent_parts} מתוך {report.message_parts} חלקים
+                    </p>
+                  )}
                   {report.last_error && (
                     <p className="break-words text-destructive">{report.last_error}</p>
                   )}
