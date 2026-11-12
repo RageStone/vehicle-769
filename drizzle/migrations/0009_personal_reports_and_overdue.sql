@@ -1,4 +1,6 @@
 ALTER TABLE public.profiles ADD COLUMN overdue_days integer NOT NULL DEFAULT 7 CHECK(overdue_days BETWEEN 0 AND 365);
+REVOKE UPDATE ON public.profiles FROM authenticated;
+REVOKE UPDATE(id,username,created_at) ON public.profiles FROM authenticated;
 GRANT UPDATE(overdue_days) ON public.profiles TO authenticated;
 CREATE POLICY own_profile_preferences ON public.profiles FOR UPDATE TO authenticated USING(id=auth.uid()) WITH CHECK(id=auth.uid());
 ALTER TABLE public.telegram_settings ADD COLUMN report_hour integer NOT NULL DEFAULT 20 CHECK(report_hour BETWEEN 0 AND 23);
