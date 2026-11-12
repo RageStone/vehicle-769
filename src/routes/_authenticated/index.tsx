@@ -516,7 +516,28 @@ function Dashboard() {
         {isLoading ? (
           <div className="py-12 text-center text-muted-foreground">טוען…</div>
         ) : filtered.length === 0 ? (
-          <EmptyState onAdd={() => setAddOpen(true)} />
+          vehicles.length === 0 ? (
+            <EmptyState onAdd={() => setAddOpen(true)} />
+          ) : (
+            <div className="rounded-md border border-dashed p-8 text-center">
+              <p>לא נמצאו רכבים התואמים לסינון</p>
+              <Button
+                className="mt-3"
+                variant="outline"
+                onClick={() => {
+                  setSearch("");
+                  setCategory("all");
+                  setLastStatus("all");
+                  setStatFilter(null);
+                  setDateFrom("");
+                  setDateTo("");
+                  setShowDateRange(false);
+                }}
+              >
+                נקה את כל המסננים
+              </Button>
+            </div>
+          )
         ) : (
           <>
             {/* Mobile cards */}
